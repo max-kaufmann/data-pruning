@@ -1,9 +1,9 @@
 import torch
 import torch.nn.functional as F
 
-import config
+import attacks
 from attacks.attacks import AttackInstance, tensor_clamp_l2
-
+import config
 
 class FGSM(AttackInstance):
 
@@ -23,11 +23,12 @@ class FGSM(AttackInstance):
                 f"Distance metric must be either 'l2' or 'inf',was {args.distance_metric}"
             )
 
-    def generate_attack(self, model,xs,ys):
+    def generate_attack(self,model,xs,ys):
 
         xs, ys = xs.to(config.device), ys.to(config.device)
-        
         delta = torch.zeros_like(xs)
+
+        delta = delta.uniform_(-self.epsilon, self.epsilon)
         delta.requires_grad = True
 
         adv_inputs = (xs + delta)

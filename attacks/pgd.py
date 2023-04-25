@@ -1,9 +1,8 @@
 import torch
 import torch.nn.functional as F
 
-import attacks
 import config
-from attacks.attacks import AttackInstance
+from attacks.attacks import AttackInstance, tensor_clamp_l2
 
 
 class PGD(AttackInstance):
@@ -25,14 +24,14 @@ class PGD(AttackInstance):
         The distance metric to use, either 'l2' or 'linf'
     """
 
-    def __init__(self, model, args):
-        super(PGD, self).__init__(model, args)
+    def __init__(self, args):
+        super(PGD, self).__init__( args)
         self.epsilon = args.epsilon
         self.step_size = args.step_size
         self.num_steps = args.num_steps
 
         if args.distance_metric == "l2":
-            self.project_tensor = lambda x, epsilon: attacks.attacks.tensor_clamp_l2(
+            self.project_tensor = lambda x, epsilon: tensor_clamp_l2(
                 x, 0, epsilon)
         elif args.distance_metric == "linf":
             self.project_tensor = lambda x, epsilon: torch.clamp(
@@ -42,21 +41,21 @@ class PGD(AttackInstance):
                 f"Distance metric must be either 'l2' or 'inf',was {args.distance_metric}"
             )
 
-    def generate_attack(self, batch):
+    def generate_attack(self,model, xs,ys):
 
-        inputs, targets = batch
-        inputs, targets = inputs.to(config.device), targets.to(config.device)
-        delta = torch.zeros_like(inputs)
+
+        xs, ys = xs.to(config.device), ys.to(config.device)
+        delta = torch.zeros_like(xs)
 
         delta = delta.uniform_(-self.epsilon, self.epsilon)
         delta.requires_grad = True
 
         for i in range(0, self.num_steps):
 
-            adv_inputs = (inputs + delta)
-            logits = self.model(adv_inputs)
+            adv_inputs = (xs + delta)
+            logits = model(adv_inputs)
 
-            loss = F.cross_entropy(logits, targets)
+            loss = F.cross_entropy(logits, ys)
             grad = torch.autograd.grad(loss, adv_inputs, only_inputs=True)[0]
 
             delta = delta + self.step_size * torch.sign(grad)
@@ -64,10 +63,10 @@ class PGD(AttackInstance):
             delta = delta.detach()
             delta.requires_grad = True
 
-        adv_inputs = torch.clamp(inputs + delta, 0, 1)
+        adv_inputs = torch.clamp(xs + delta, 0, 1)
 
         return adv_inputs.detach()
 
 
-def get_attack(model, args):
-    return PGD(model, args)
+def get_attack(args):
+    return PGD(args)

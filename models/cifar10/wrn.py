@@ -3,7 +3,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import models.cifar10.cifar10_config as c10_config
+import d.cifar10.cifar10_config as c10_config
 import torchvision.transforms as transforms
 import config
 

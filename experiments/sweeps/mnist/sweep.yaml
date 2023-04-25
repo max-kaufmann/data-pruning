@@ -1,0 +1,46 @@
+project_name: 'data-pruning'
+fixed_parameters:
+  cpus_per_gpu: 10
+  ram_limit_gb: 400
+  num_gpus: 1
+
+hyperparameters:
+  lr_max:
+    - 0.005
+  lr_warmup_end:
+    - 0.4
+  num_epochs:
+    - 10
+  batch_size:
+    - 32
+  pruning_epoch:
+    - 1
+    - 2
+    - 4
+    - 6
+    - 8
+    - 10
+  data_proportion:
+    - 0.2
+    - 0.4
+    - 0.6
+    - 0.8
+    - 1.0
+  freeze_layers:
+    - "all"
+  systematic_sampling:
+    - True
+    - False
+  pruning_method:
+    - "low"
+    - "high"
+    - "low+high"
+  dataset: 
+    - 'mnist'
+  attack: 
+    - rs_fgsm
+  attack_test:
+    - pgd
+  eval_num_steps: 
+    - 20
+  

@@ -16,8 +16,7 @@ class AttackInstance():
         The arguments passed to the program, which are used to determine the attack parameters"""
 
     # Confused on exactly how I do inheritance here
-    def __init__(self, model, args):
-        self.model = model
+    def __init__(self, args):
         self.args = args
 
     @abc.abstractmethod
