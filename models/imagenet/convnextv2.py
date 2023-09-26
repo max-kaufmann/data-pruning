@@ -180,41 +180,14 @@ def convnextv2_huge(**kwargs):
 
 models = [convnextv2_atto, convnextv2_femto, convnext_pico, convnextv2_nano, convnextv2_tiny, convnextv2_base, convnextv2_large, convnextv2_huge]
 sizes = [3.7, 5.2, 9.1, 15.6, 28.6, 89, 198, 660]
+
 def get_model(args):
-
-    if args.weights == "1":
-        model = models[0]()
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnext/convnext_{sizes[0]}M")["model"]
-        model.load_state_dict(sd)
-    elif args.weights == "2":
-        model = models[1]()
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnext/convnext_{sizes[1]}M")["model"]
-        model.load_state_dict(sd)
-    elif args.weights == "3":
-        model = models[2]()
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnext/convnext_{sizes[2]}M")["model"]
-        model.load_state_dict(sd)
-    elif args.weights == "4":
-        model = models[3]()
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnext/convnext_{sizes[3]}M")["model"]
-        model.load_state_dict(sd)
-    elif args.weights == "5":
-        model = models[4]()
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnext/convnext_{sizes[4]}M")["model"]
-        model.load_state_dict(sd)
-    elif args.weights == "6":
-        model = models[5]()
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnext/convnext_{sizes[5]}M")["model"]
-        model.load_state_dict(sd)
-    elif args.weights == "7":
-        model = models[6]()
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnext/convnext_{sizes[6]}M")["model"]
-        model.load_state_dict(sd)
-    elif args.weights == "8":
-        model = models[7]()
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnext/convnext_{sizes[7]}M")["model"]
-        model.load_state_dict(sd)
-    else:
-        raise NotImplementedError("Weights not found")
-
+    try:
+        arch_variant = int(args.arch_variant) - 1
+    except TypeError:
+        print("convnextv2 architecture variant has to be specified by an integer from 1 to 8.")
+        raise
+        
+    model = models[arch_variant]()
+  
     return model

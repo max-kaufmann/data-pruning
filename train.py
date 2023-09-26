@@ -2,6 +2,7 @@ import argparse
 import importlib
 import numpy as np
 import torch
+import yaml
 
 import config
 from src.misc import attach_debugger
@@ -11,7 +12,15 @@ global wandb
 
 def main(args):
 
-    if not args.no_wandb:
+    if args.wandb_sweep:
+        with open("./experiments/wandb_sweeps/config.yaml") as file:
+            config = yaml.load(file, Loader=yaml.FullLoader)
+
+        run = wandb.init(config=config)
+
+        args.data_proportion = wandb.config.data_proportion
+
+    elif not args.no_wandb:
         wandb.init(project=args.wandb_project_name, name=args.experiment_name, config=args)
 
     train_dataset = get_train_dataset(args.dataset,args)
@@ -37,6 +46,9 @@ def main(args):
 
     train(model, train_dataset, eval_dataset, train_attack, eval_attack, args)
 
+    if args.save_model is not None:
+        torch.save(model.state_dict(), args.save_model)
+
 
 def get_parser():
     """Returns the parser object for the main function"""   
@@ -44,14 +56,26 @@ def get_parser():
     parser = argparse.ArgumentParser()
 
     # General experiment-running arguments
+    
     parser.add_argument("--architecture",
                         type=str,
                         default="cnn",
                         help="This specified the model architecture which is being tested")
+    
+    parser.add_argument("--arch_variant",
+                        type=str,
+                        default=None,
+                        help="This specifies the architecture variant which is being tested. See 'architecture.py' file for options.")
 
     parser.add_argument("--dataset",
                         default="mnist",
                         help="The dataset which is being evaluated."
+                        )
+    
+    parser.add_argument("--save_model",
+                        type=str,
+                        default=None,
+                        help="Save the model to the given path."
                         )
 
     parser.add_argument("--pruning_epoch",
@@ -141,7 +165,6 @@ def get_parser():
     parser.add_argument("--experiment_name",
                         default="experiment",
                         type=str,
-                        required=True,
                         help="The name of this experiment, used when logging.")
 
     parser.add_argument("--num_logs_per_epoch",
@@ -221,6 +244,17 @@ def get_parser():
     parser.add_argument("--no-wandb",
                         action="store_true",
                         help="If set, wandb logging is disabled.")
+    
+    parser.add_argument("--wandb_sweep",
+                        action="store_true",
+                        help="Whether or not a wandb sweep is happening.",
+                        )
+    
+    """ 
+    When wandb_sweep = True, training_loop.train knows to initialise the sweep hyperparameters properly,
+    instead of just taking the values specified by this parser.
+
+    """
 
     parser.add_argument("--early_stopping",
                         action="store_true",

@@ -427,80 +427,12 @@ def resnet50_transfer(pretrained=False, progress=True, **kwargs):
 
 def get_model(args):
 
-    weights = args.weights
+    arch_variant = args.arch_variant
 
-    if weights == 'standard':
-        model = torchvision.models.resnet50(weights='IMAGENET1K_V1').to(config.device)
-
-
-    elif weights == 'robust':
+    if arch_variant == 'standard':
+        model = torchvision.models.resnet50().to(config.device)
+    elif arch_variant == 'robust':
         model = ResNet(Bottleneck,[3, 4, 6, 3])#TODO: Taken from https://github.com/MadryLab, (it is the L_infinity epsilon=8/255 resnet 50 model) should cite if used.
-
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/imagenet_linf_8.pt",map_location=config.device)['model']
-        sd = {k.replace('module.',''):v for k,v in sd.items()}
-        sd = {k.replace('model.',''):v for k,v in sd.items() if k.startswith('model.')}
-
-        model.load_state_dict(sd)
-
-    elif weights == "deepaug":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/deepaugment.pth.tar",map_location=config.device)
-        model.load_state_dict(sd)
-    
-    elif weights == "ant":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/ant.pth",map_location=config.device)
-        model.load_state_dict(sd["model_state_dict"])
-
-    elif weights == "pixmix":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/pixmix.pth.tar",map_location=config.device)
-        model.load_state_dict(sd)
-
-    elif weights == "augmix":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/augmix.tar",map_location=config.device)
-        model.load_state_dict(sd)
-
-    elif weights == "deepaug_and_augmix":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/deepaugment_and_augmix.pth.tar",map_location=config.device)
-        model.load_state_dict(sd)
-
-    elif weights == "stylised":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/stylised.tar",map_location=config.device)
-        model.load_state_dict(sd)
-
-    elif weights == "mixup":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/mixup.pth.tar",map_location=config.device)
-        model.load_state_dict(sd)
-    elif weights == "cutmix":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/cutmix.pth.tar",map_location=config.device)
-        model.load_state_dict(sd)
-    elif weights == "randaug":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/randaug.pth",map_location=config.device)
-        model.load_state_dict(sd)
-    elif weights == "moex":
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/moex.pt",map_location=config.device)
-        model.load_state_dict(sd)
-    elif weights in ["l2_0.05","l2_0.5","l2_1","l2_3","linf_2","linf_4"]:
-        model = torchvision.models.resnet50(weights=None)
-        sd = torch.load(config.project_path + "models/imagenet/data/weights/{}.pth".format(weights),map_location=config.device)
-        model.load_state_dict(sd)
     else:
-        model = ResNet(Bottleneck,[3, 4, 6, 3])
-        try:
-            model.load_state_dict(torch.load(weights,map_location=config.device))
-        except RuntimeError as e:
-            state = torch.load(weights, map_location=config.device)['model']
-            if 'module.model.' in next(iter(state.keys())):
-                state = {k.replace('module.model.', ''): v for k, v in state.items() if 'module.model.' in k}
-            model.load_state_dict(state)
-
-    
+        model = torchvision.models.resnet50()
     return model

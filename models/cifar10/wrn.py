@@ -180,27 +180,4 @@ class WideResNet(nn.Module):
 
 def get_model(args):
     model = WideResNet()
-
-    if args.weights == "standard":
-        sd = torch.load(config.project_path + "models/cifar10/weights/linf_wrn.pt")
-        model.load_state_dict(sd)
-    elif args.weights == "linf":
-        sd = torch.load(config.project_path + "models/cifar10/weights/linf_wrn.pt")
-        model.load_state_dict(sd)
-    elif args.weights == "augmix":
-        sd = torch.load(config.project_path + "models/cifar10/weights/augmix_wrn.pt")
-        model.load_state_dict(sd)
-    elif args.weights == "cutmix":
-        sd = torch.load(config.project_path + "models/cifar10/weights/cutmix_wrn.pt")
-        model.load_state_dict(sd)
-    elif args.weights == "mixup":
-        sd = torch.load(config.project_path + "models/cifar10/weights/mixup_wrn.pt")
-        model.load_state_dict(sd)
-    elif args.weights == "uniform":
-        sd = torch.load(config.project_path + "models/cifar10/weights/uniform_wrn.pt")
-        model.load_state_dict(sd)
-    else:
-        sd = torch.load(args.weights)
-        model.load_state_dict(sd)
-
     return model

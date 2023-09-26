@@ -8,22 +8,23 @@ import torch.nn.functional as F
 from tqdm import tqdm
 import math
 from evaluate import evaluate
+from attacks import auto_attack
 
 def get_remove_indices(loss_tensor,original_indices,args):
     
     loss_tensor_indices=torch.argsort(loss_tensor)
 
     if args.pruning_method == "high":
-        shuffled_indices_to_remove = loss_tensor_indices[-math.floor(args.data_proportion * len(loss_tensor_indices)):]
+        shuffled_indices_to_remove = loss_tensor_indices[-math.floor((1-args.data_proportion) * len(loss_tensor_indices)):]
         indices_to_remove = original_indices[shuffled_indices_to_remove.cpu()]
     elif args.pruning_method == "low":
-        shuffled_indices_to_remove = loss_tensor_indices[math.floor(args.data_proportion * len(loss_tensor_indices)):]
+        shuffled_indices_to_remove = loss_tensor_indices[math.floor((1-args.data_proportion) * len(loss_tensor_indices)):]
         indices_to_remove = original_indices[shuffled_indices_to_remove.cpu()]
     elif args.pruning_method == "low+high":
-        shuffled_indices_to_remove = torch.cat([loss_tensor_indices[:math.floor(args.data_proportion * len(loss_tensor_indices))//2], loss_tensor_indices[-math.floor(args.data_proportion * len(loss_tensor_indices))//2:]])
+        shuffled_indices_to_remove = torch.cat([loss_tensor_indices[:math.floor((1-args.data_proportion) * len(loss_tensor_indices))//2], loss_tensor_indices[-math.floor(args.data_proportion * len(loss_tensor_indices))//2:]])
         indices_to_remove = original_indices[shuffled_indices_to_remove.cpu()]
     elif args.pruning_method == "random":
-        indices_to_remove = np.random.choice(original_indices, math.floor(args.data_proportion * len(original_indices)), replace=False)
+        indices_to_remove = np.random.choice(original_indices, math.floor((1-args.data_proportion) * len(original_indices)), replace=False)
     else:
         raise ValueError("Pruning method not recognized")
     
@@ -37,7 +38,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
 
 
     #Here, we have our optimizer (thing doing the optimization on the neural network)
-    optimizer = torch.optim.Adam(model.parameters(), lr = args.lr) #TODO: replace with a "get optimizer call"
+    optimizer = torch.optim.SGD(params=model.parameters(), lr=args.lr) #torch.optim.Adam(model.parameters(), lr = args.lr) #TODO: replace with a "get optimizer call"
     lr_generator = lambda t: np.interp(t, [0, args.num_epochs * args.lr_warmup_end, args.num_epochs], [0, args.lr_max, 0]) #TODO: replace with a proper lr scheduler call
 
     start_time = time.time()
@@ -50,7 +51,6 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
     eval_dataset_size = args.eval_size if args.eval_size != -1 else len(eval_dataset)
     eval_dataset =  torch.utils.data.Subset(eval_dataset, np.random.choice(len(eval_dataset), eval_dataset_size,replace=False))
     eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
-
 
     for epoch in range(0, args.num_epochs):
 
@@ -75,7 +75,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
 
             xs, ys = xs.to(args.device), ys.to(args.device)
             
-            adv_xs = train_attack.generate_attack(model,xs, ys) if  args.attack is not None else xs
+            adv_xs = train_attack.generate_attack(model,xs, ys) if  args.attack != "none" else xs
             logits = model(adv_xs)
 
 
@@ -153,6 +153,12 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
                 indices_to_remove = get_remove_indices(loss_tensor,shuffled_index,args)
             
             train_dataset.remove_indices(indices_to_remove)
+    
+    attack = auto_attack.AutoAttackAdversary(args)
+    AA_eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=10000, shuffle=False, num_workers=args.num_workers, pin_memory=True)
+    AA_metrics = evaluate(model, AA_eval_dataloader, attack, args)
+    wandb.log({"AA_accuracy": AA_metrics["test_accuracy"]})
+    
     
     if args.early_stopping:
         model = best_model
