@@ -22,10 +22,7 @@ def evaluate(model, dataloader, attack, args):
 
         xs, ys = xs.to(args.device), ys.to(args.device)
 
-        if attack is not None:
-            adv_xs = attack.generate_attack(model,xs, ys)
-        else:
-            adv_xs = xs
+        adv_xs = attack.generate_attack(model,xs, ys)
 
         output = model(adv_xs)
         adv_loss = F.cross_entropy(output, ys,reduction="none")

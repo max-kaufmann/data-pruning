@@ -30,6 +30,7 @@ class AutoAttackAdversary(AttackInstance):
                                device = 'cpu',
                                verbose=False
                                )
+        adversary.apgd.n_iter = 40
         adversary.attacks_to_run = ['apgd-ce']
         x_adv = adversary.run_standard_evaluation(xs, ys, bs=len(ys))
         return x_adv

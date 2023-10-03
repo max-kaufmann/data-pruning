@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from tqdm import tqdm
 import math
 from evaluate import evaluate
-from attacks import auto_attack
+import attacks
 
 def get_remove_indices(loss_tensor,original_indices,args):
     
@@ -38,7 +38,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
 
 
     #Here, we have our optimizer (thing doing the optimization on the neural network)
-    optimizer = torch.optim.SGD(params=model.parameters(), lr=args.lr) #torch.optim.Adam(model.parameters(), lr = args.lr) #TODO: replace with a "get optimizer call"
+    optimizer = torch.optim.Adam(params=model.parameters(), lr=args.lr) #TODO: replace with a "get optimizer call"
     lr_generator = lambda t: np.interp(t, [0, args.num_epochs * args.lr_warmup_end, args.num_epochs], [0, args.lr_max, 0]) #TODO: replace with a proper lr scheduler call
 
     start_time = time.time()
@@ -50,8 +50,12 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
     #make eval dataset smaller
     eval_dataset_size = args.eval_size if args.eval_size != -1 else len(eval_dataset)
     eval_dataset =  torch.utils.data.Subset(eval_dataset, np.random.choice(len(eval_dataset), eval_dataset_size,replace=False))
-    eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
+    eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=args.eval_batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
+    if args.early_stopping:
+        best_accuracy = 0
+        best_epoch = -1
+    
     for epoch in range(0, args.num_epochs):
 
         train_dataset_shuffled = ShuffledDataset(train_dataset)
@@ -60,10 +64,6 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
         train_loader_size = len(train_dataloader)
 
         is_pruning_epoch = epoch + 1 == args.pruning_epoch and args.data_proportion != 1
-
-        if args.early_stopping:
-            best_accuracy = 0
-            best_epoch = -1
 
         if is_pruning_epoch and args.pruning_method != "random":
             loss_list = []
@@ -75,7 +75,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
 
             xs, ys = xs.to(args.device), ys.to(args.device)
             
-            adv_xs = train_attack.generate_attack(model,xs, ys) if  args.attack != "none" else xs
+            adv_xs = train_attack.generate_attack(model,xs, ys) 
             logits = model(adv_xs)
 
 
@@ -93,7 +93,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
             loss = loss.item()
 
 
-            if i % math.ceil((train_loader_size - 1)/args.num_logs_per_epoch) == 0:
+            if args.num_logs_per_epoch > 0 and i > 0 and i % math.ceil((train_loader_size - 1)/args.num_logs_per_epoch) == 0:
                 metrics = evaluate(model, eval_dataloader, eval_attack, args)
                 metrics["epoch"] = epoch + i/train_loader_size
 
@@ -120,7 +120,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
                 best_accuracy = metrics["test_accuracy"]
                 best_epoch = epoch
                 best_model = copy.deepcopy(model.state_dict())
-            
+
             if epoch - best_epoch >= args.early_stopping_patience:
                 print("EARLY STOPPING")
                 model = best_model
@@ -154,14 +154,19 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
             
             train_dataset.remove_indices(indices_to_remove)
     
-    attack = auto_attack.AutoAttackAdversary(args)
-    AA_eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=10000, shuffle=False, num_workers=args.num_workers, pin_memory=True)
-    AA_metrics = evaluate(model, AA_eval_dataloader, attack, args)
-    wandb.log({"AA_accuracy": AA_metrics["test_accuracy"]})
-    
-    
-    if args.early_stopping:
+    if args.num_logs_per_epoch == 0:
+        final_accuracy = evaluate(model, eval_dataloader, eval_attack, args)["test_accuracy"]
+    elif args.early_stopping:
+        final_accuracy = best_accuracy
         model = best_model
+    else:
+        final_accuracy = metrics["test_accuracy"]
+
+    if not args.no_wandb:
+        wandb.log({"adv_accuracy": final_accuracy})
+    else:
+        print(f"Advesraial accuracy: {final_accuracy}")
+    
     
     return model
 

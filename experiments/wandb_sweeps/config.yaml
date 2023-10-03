@@ -1,0 +1,33 @@
+program: train.py
+method: grid
+name: p_lr_sweep
+parameters:
+  data_proportion:
+    values: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+  lr_max:
+    values: [0.01,0.02,0.03,0.04,0.05]
+command:
+  - ./venv/Scripts/python
+  - ${program}
+  - "--wandb_sweep"
+  - "--num_epochs"
+  - "10"
+  - "--pruning_epoch"
+  - "3"
+  - "--attack"
+  - "rs_fgsm"
+  - "--epsilon"
+  - "0.3"
+  - "--step_size"
+  - "0.375"
+  - "--eval_attack"
+  - "auto_attack"
+  - "--eval_batch_size"
+  - "10000"
+  - "--distance_metric"
+  - "linf"
+  - "--seed"
+  - "100"
+  - "--num_logs_per_epoch"
+  - "1"
+  - "--early_stopping"

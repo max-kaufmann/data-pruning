@@ -19,6 +19,13 @@ def main(args):
         run = wandb.init(config=config)
 
         args.data_proportion = wandb.config.data_proportion
+        #args.pruning_epoch = wandb.config.pruning_epoch
+        args.lr_max = wandb.config.lr_max
+        #args.num_epochs = wandb.config.num_epochs
+        #args.epsilon = wandb.config.epsilon
+        #args.step_size = wandb.config.step_size
+
+        run.name = f"p = {args.data_proportion} lr = {args.lr_max}"
 
     elif not args.no_wandb:
         wandb.init(project=args.wandb_project_name, name=args.experiment_name, config=args)
@@ -251,7 +258,7 @@ def get_parser():
                         )
     
     """ 
-    When wandb_sweep = True, training_loop.train knows to initialise the sweep hyperparameters properly,
+    When wandb_sweep = True, main knows to initialise the sweep hyperparameters properly,
     instead of just taking the values specified by this parser.
 
     """
