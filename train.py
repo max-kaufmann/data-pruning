@@ -7,6 +7,7 @@ import yaml
 import config
 from src.misc import attach_debugger
 from src.training_loop import train
+from evaluate import evaluate
 
 global wandb
 
@@ -20,12 +21,12 @@ def main(args):
 
         args.data_proportion = wandb.config.data_proportion
         #args.pruning_epoch = wandb.config.pruning_epoch
-        args.lr_max = wandb.config.lr_max
+        #args.lr_max = wandb.config.lr_max
         #args.num_epochs = wandb.config.num_epochs
         #args.epsilon = wandb.config.epsilon
         #args.step_size = wandb.config.step_size
 
-        run.name = f"p = {args.data_proportion} lr = {args.lr_max}"
+        run.name = f"p = {args.data_proportion}"
 
     elif not args.no_wandb:
         wandb.init(project=args.wandb_project_name, name=args.experiment_name, config=args)
@@ -51,7 +52,13 @@ def main(args):
     
     eval_attack = get_attack(args.eval_attack,eval_attack_args)
 
-    train(model, train_dataset, eval_dataset, train_attack, eval_attack, args)
+    if args.eval_only is not None:
+        model.load_state_dict(torch.load(args.eval_only))
+        dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=args.eval_batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
+        metrics = evaluate(model, dataloader, eval_attack, args)
+        print(f'Attack: {args.eval_attack} | Adversarial Accuracy: {"%.3f" % metrics["test_accuracy"]}')
+    else:
+        train(model, train_dataset, eval_dataset, train_attack, eval_attack, args)
 
     if args.save_model is not None:
         torch.save(model.state_dict(), args.save_model)
@@ -139,8 +146,13 @@ def get_parser():
     parser.add_argument("--distance_metric",
                         type=str,
                         choices=["linf", "l2"],
-                        default="l2",
+                        default="linf",
                         help="The distance metric used for constraining the perturbation. Only affects some attacks (see the Github attack README for more details.")
+
+    parser.add_argument("--eval_only",
+                    type=str,
+                    default=None,
+                    help="Whether or not to load in a pretrained model from the given path for evaluation only.")
 
     parser.add_argument("--eval_attack",
                         type=str,
@@ -150,7 +162,7 @@ def get_parser():
 
     parser.add_argument("--eval_num_steps",
                         type=int,
-                        default=10,
+                        default=40,
                         help="The number of steps to run the evaluation attack for.")
 
     parser.add_argument("--eval_epsilon",
@@ -197,7 +209,7 @@ def get_parser():
     parser.add_argument("--num_workers",
                         default=6,
                         type=int,
-                        help="Number of workers which are used by the  Dataloader objects in the project")
+                        help="Number of workers which are used by the Dataloader objects in the project")
 
     parser.add_argument("--device",
                         default="cuda" if torch.cuda.is_available() else "cpu",

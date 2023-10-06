@@ -10,6 +10,7 @@ class AutoAttackAdversary(AttackInstance):
     def __init__(self, args):
         super(AutoAttackAdversary, self).__init__(args)
         self.epsilon = args.epsilon
+        self.num_steps = args.num_steps
 
         if args.distance_metric == "l2":
             self.norm = "L2"
@@ -27,10 +28,10 @@ class AutoAttackAdversary(AttackInstance):
                                norm=self.norm,
                                eps=self.epsilon,
                                version='standard',
-                               device = 'cpu',
+                               device = "cuda" if torch.cuda.is_available() else "cpu",
                                verbose=False
                                )
-        adversary.apgd.n_iter = 40
+        adversary.apgd.n_iter = self.num_steps
         adversary.attacks_to_run = ['apgd-ce']
         x_adv = adversary.run_standard_evaluation(xs, ys, bs=len(ys))
         return x_adv

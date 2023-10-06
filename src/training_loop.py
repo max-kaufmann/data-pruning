@@ -36,7 +36,6 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
     model.to(args.device)
     model.train()
 
-
     #Here, we have our optimizer (thing doing the optimization on the neural network)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=args.lr) #TODO: replace with a "get optimizer call"
     lr_generator = lambda t: np.interp(t, [0, args.num_epochs * args.lr_warmup_end, args.num_epochs], [0, args.lr_max, 0]) #TODO: replace with a proper lr scheduler call
@@ -49,7 +48,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
 
     #make eval dataset smaller
     eval_dataset_size = args.eval_size if args.eval_size != -1 else len(eval_dataset)
-    eval_dataset =  torch.utils.data.Subset(eval_dataset, np.random.choice(len(eval_dataset), eval_dataset_size,replace=False))
+    eval_dataset =  torch.utils.data.Subset(eval_dataset, np.random.choice(len(eval_dataset), eval_dataset_size, replace=False))
     eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=args.eval_batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
 
     if args.early_stopping:
@@ -58,6 +57,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
     
     for epoch in range(0, args.num_epochs):
 
+          
         train_dataset_shuffled = ShuffledDataset(train_dataset)
 
         train_dataloader = torch.utils.data.DataLoader(train_dataset_shuffled, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
@@ -65,7 +65,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
 
         is_pruning_epoch = epoch + 1 == args.pruning_epoch and args.data_proportion != 1
 
-        if is_pruning_epoch and args.pruning_method != "random":
+        if is_pruning_epoch:
             loss_list = []
 
         for i, (xs, ys) in tqdm(enumerate(train_dataloader), desc=f"Epoch {epoch}"):
@@ -126,9 +126,13 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
                 model = best_model
                 break
         
-        if epoch + 1 == args.pruning_epoch and args.data_proportion != 1:
+        if is_pruning_epoch:
+            
+            if args.pruning_method != "random":
+                loss_tensor = torch.cat(loss_list)
+            else:
+                loss_tensor = torch.tensor(loss_list)
 
-            loss_tensor = torch.cat(loss_list)
             shuffled_index = train_dataset_shuffled.get_indices()
 
             if args.systematic_sampling:
@@ -166,8 +170,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
         wandb.log({"adv_accuracy": final_accuracy})
     else:
         print(f"Advesraial accuracy: {final_accuracy}")
-    
-    
+
     return model
 
             

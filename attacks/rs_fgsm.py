@@ -34,11 +34,14 @@ class FGSM(AttackInstance):
         adv_inputs = (xs + delta)
         logits = model(adv_inputs)
         loss = F.cross_entropy(logits, ys)
-        grad = torch.autograd.grad(loss, adv_inputs, only_inputs=True)[0]
+        
+        loss.backward()
+        grad = delta.grad.detach()
 
-        adv_delta = self.step_size * torch.sign(grad)
-        adv_delta = self.project_tensor(adv_delta, self.epsilon)
-        adv_inputs = torch.clamp(xs + adv_delta, 0, 1)
+        delta.data = self.project_tensor(delta + self.step_size * torch.sign(grad), self.epsilon)
+        delta.data = torch.max(torch.min(1-xs, delta.data), 0-xs)
+        delta = delta.detach()
+        adv_inputs = torch.clamp(xs + delta, 0, 1)
 
         return adv_inputs.detach()
 
