@@ -3,7 +3,7 @@ import importlib
 import numpy as np
 import torch
 import yaml
-
+import random
 import config
 from src.misc import attach_debugger
 from src.training_loop import train
@@ -27,6 +27,8 @@ def main(args):
         #args.step_size = wandb.config.step_size
 
         run.name = f"p = {args.data_proportion}"
+
+        table = wandb.Table(columns=["data proportion","adversarial accuracy"])
 
     elif not args.no_wandb:
         wandb.init(project=args.wandb_project_name, name=args.experiment_name, config=args)
@@ -55,11 +57,15 @@ def main(args):
     if args.eval_only is not None:
         model.load_state_dict(torch.load(args.eval_only))
         dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=args.eval_batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
-        metrics = evaluate(model, dataloader, eval_attack, args)
-        print(f'Attack: {args.eval_attack} | Adversarial Accuracy: {"%.3f" % metrics["test_accuracy"]}')
+        adv_accuracy = evaluate(model, dataloader, eval_attack, args)["test_accuracy"]
+        print(f'Attack: {args.eval_attack} | Adversarial Accuracy: {"%.3f" % adv_accuracy}')
     else:
-        train(model, train_dataset, eval_dataset, train_attack, eval_attack, args)
+        adv_accuracy = train(model, train_dataset, eval_dataset, train_attack, eval_attack, args)["adv_accuracy"]
 
+    if args.wandb_sweep:
+        table.add_data(args.data_proportion,adv_accuracy + random.uniform(-0.001,0.001))
+        run.log({"Test Table": table})
+    
     if args.save_model is not None:
         torch.save(model.state_dict(), args.save_model)
 

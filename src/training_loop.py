@@ -171,7 +171,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
     else:
         print(f"Advesraial accuracy: {final_accuracy}")
 
-    return model
+    return {"model": model, "adv_accuracy": final_accuracy}
 
             
 
