@@ -14,7 +14,7 @@ global wandb
 def main(args):
 
     if args.wandb_sweep:
-        with open("./experiments/wandb_sweeps/config.yaml") as file:
+        with open("./experiments/wandb_sweeps/" + args.dataset + "_config.yaml") as file:
             config = yaml.load(file, Loader=yaml.FullLoader)
 
         run = wandb.init(config=config)
@@ -63,8 +63,8 @@ def main(args):
         adv_accuracy = train(model, train_dataset, eval_dataset, train_attack, eval_attack, args)["adv_accuracy"]
 
     if args.wandb_sweep:
-        table.add_data(args.data_proportion,adv_accuracy + random.uniform(-0.001,0.001))
-        run.log({"Test Table": table})
+        table.add_data(args.data_proportion,adv_accuracy)
+        run.log({"Table": table})
     
     if args.save_model is not None:
         torch.save(model.state_dict(), args.save_model)
