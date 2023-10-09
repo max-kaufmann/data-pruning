@@ -26,7 +26,7 @@ def main(args):
         #args.epsilon = wandb.config.epsilon
         #args.step_size = wandb.config.step_size
 
-        run.name = f"p = {args.data_proportion} | run {wandb.config.repeat}"
+        run.name = f"p = {args.data_proportion}"
 
         table = wandb.Table(columns=["data proportion","adversarial accuracy"])
 
