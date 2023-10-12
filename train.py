@@ -25,8 +25,9 @@ def main(args):
         #args.num_epochs = wandb.config.num_epochs
         #args.epsilon = wandb.config.epsilon
         #args.step_size = wandb.config.step_size
+        args.attack = wandb.config.attack
 
-        run.name = f"p = {args.data_proportion}"
+        run.name = f"p = {args.data_proportion} | attack: {args.attack}"
 
         table = wandb.Table(columns=["data proportion","adversarial accuracy"])
 

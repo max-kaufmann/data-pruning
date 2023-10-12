@@ -101,11 +101,12 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_a
                     wandb.log(metrics)
                 else:
                     print(metrics)
-
-            if not args.no_wandb:
-                wandb.log({"train_loss": loss, "epoch": epoch + i/train_loader_size, "lr": lr,"dataset_size":len(train_dataset)})
-            else:
-                print(f"Epoch {epoch + i/train_loader_size} - loss: {loss} - lr: {lr}")
+                    
+            if i % math.ceil((train_loader_size - 1)/20) == 0:
+                if not args.no_wandb:
+                    wandb.log({"train_loss": loss, "epoch": epoch + i/train_loader_size, "lr": lr,"dataset_size":len(train_dataset)})
+                else:
+                    print(f"Epoch {epoch + i/train_loader_size} - loss: {loss} - lr: {lr}")
 
         end_time = int(time.time()) - int(start_time)
 

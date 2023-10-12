@@ -23,7 +23,7 @@ class AutoAttackAdversary(AttackInstance):
                         norm=norm,
                         eps=args.epsilon,
                         version='custom',
-                        device = "cuda" if torch.cuda.is_available() else "cpu",
+                        device = config.device,
                         verbose=False,
                         attacks_to_run = ['apgd-ce'])
         
