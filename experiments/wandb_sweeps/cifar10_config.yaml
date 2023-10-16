@@ -9,11 +9,17 @@ parameters:
 command:
   - python
   - ${program}
+  - "--wandb_sweep"
   - "--dataset"
   - "cifar10"
   - "--architecture"
   - "preactresnet18"
-  - "--wandb_sweep"
+  - "--optimizer"
+  - "sgd"
+  - "--momentum"
+  - "0.9"
+  - "--weight_decay"
+  - "0.0005"
   - "--num_epochs"
   - "30"
   - "--pruning_epoch"

@@ -61,7 +61,8 @@ def main(args):
         adv_accuracy = evaluate(model, dataloader, eval_attack, args)["test_accuracy"]
         print(f'Attack: {args.eval_attack} | Adversarial Accuracy: {"%.3f" % adv_accuracy}')
     else:
-        adv_accuracy = train(model, train_dataset, eval_dataset, train_attack, eval_attack, args)["adv_accuracy"]
+        optimizer = get_optimizer(args.optimizer, model, args)
+        adv_accuracy = train(model, train_dataset, eval_dataset, optimizer, train_attack, eval_attack, args)["adv_accuracy"]
 
     if args.wandb_sweep:
         table.add_data(args.data_proportion,adv_accuracy)
@@ -129,6 +130,21 @@ def get_parser():
                         type=float,
                         default=0.2,
                         help="The maximum learning rate to use for training")
+    
+    parser.add_argument("--optimizer",
+                    type=str,
+                    default="adam",
+                    help="The optimizer to use for training")
+
+    parser.add_argument("--momentum",
+                    type=float,
+                    default=0,
+                    help="The momentum to be used by the optimizer during training")
+    
+    parser.add_argument("--weight_decay",
+                    type=float,
+                    default=0,
+                    help="The weight decay to be used by the optimizer during training")
 
     parser.add_argument("--epsilon",
                         type=float,
@@ -369,6 +385,12 @@ def get_train_dataset(dataset, args):
 
     return train_dataset
 
+def get_optimizer(name, model, args):
+    
+    optimizer_module = importlib.import_module("optimizers." + name, package=".")
+    optimizer = optimizer_module.get_optimizer(model, args)
+
+    return optimizer
 
 def get_attack(name, args):
     """Fetches the attack which needs to be used

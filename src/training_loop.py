@@ -30,14 +30,12 @@ def get_remove_indices(loss_tensor,original_indices,args):
     
     return indices_to_remove
 
-def train(model : torch.nn.Module,train_dataset,eval_dataset,train_attack,eval_attack,args):
+def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_attack,eval_attack,args):
 
  
     model.to(args.device)
     model.train()
 
-    #Here, we have our optimizer (thing doing the optimization on the neural network)
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=args.lr) #TODO: replace with a "get optimizer call"
     lr_generator = lambda t: np.interp(t, [0, args.num_epochs * args.lr_warmup_end, args.num_epochs], [0, args.lr_max, 0]) #TODO: replace with a proper lr scheduler call
 
     start_time = time.time()
