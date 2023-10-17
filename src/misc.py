@@ -136,3 +136,33 @@ def attach_debugger(port=5678):
 
     debugpy.wait_for_client()
     print(f"Debugger attached on port {port}")
+
+def wandb_sweep_run_init(args):
+    """
+    Updates sweep parameters at the start of each run of the sweep.
+    Names the run.
+
+    Outputs a wandb table object and 
+    "data_for_table" object which is a list of the hyperparameters
+    that we want logged in the table.
+    
+    """
+
+    with open("./experiments/wandb_sweeps/" + args.dataset + "_config.yaml") as file:
+            config = yaml.load(file, Loader=yaml.FullLoader)
+
+    run = wandb.init(config=config) #This initialises the run on the wandb side
+
+    parameter_list = [*config['parameters'].keys()]
+    title_list = [param.replace("_"," ").title() for param in parameter_list]
+    
+    run_name = ""
+    for i,parameter in enumerate(config['parameters']):
+        value = getattr(wandb.config, parameter)
+        setattr(args, parameter, value) #This line initialises the run within our code by updating args
+        run_name += f"{title_list[i]} = {value} | "
+    
+    run.name = run_name[:-2]
+    table = wandb.Table(columns=[*title_list,"Adversarial Accuracy"])
+
+    return {"Table":table, "Parameters": parameter_list, "Run":run}

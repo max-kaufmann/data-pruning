@@ -5,7 +5,7 @@ import torch
 import yaml
 import random
 import config
-from src.misc import attach_debugger
+from src.misc import attach_debugger, wandb_sweep_run_init
 from src.training_loop import train
 from evaluate import evaluate
 
@@ -14,23 +14,7 @@ global wandb
 def main(args):
 
     if args.wandb_sweep:
-        with open("./experiments/wandb_sweeps/" + args.dataset + "_config.yaml") as file:
-            config = yaml.load(file, Loader=yaml.FullLoader)
-
-        run = wandb.init(config=config)
-
-        args.data_proportion = wandb.config.data_proportion
-        #args.pruning_epoch = wandb.config.pruning_epoch
-        #args.lr_max = wandb.config.lr_max
-        #args.num_epochs = wandb.config.num_epochs
-        #args.epsilon = wandb.config.epsilon
-        #args.step_size = wandb.config.step_size
-        args.attack = wandb.config.attack
-
-        run.name = f"p = {args.data_proportion} | attack: {args.attack}"
-
-        table = wandb.Table(columns=["data proportion","adversarial accuracy"])
-
+        table, sweep_parameters, run = wandb_sweep_run_init(args).values()
     elif not args.no_wandb:
         wandb.init(project=args.wandb_project_name, name=args.experiment_name, config=args)
 
@@ -65,7 +49,7 @@ def main(args):
         adv_accuracy = train(model, train_dataset, eval_dataset, optimizer, train_attack, eval_attack, args)["adv_accuracy"]
 
     if args.wandb_sweep:
-        table.add_data(args.data_proportion,adv_accuracy)
+        table.add_data(*sweep_parameters,adv_accuracy)
         run.log({"Table": table})
     
     if args.save_model is not None:
