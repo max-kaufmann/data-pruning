@@ -2,7 +2,6 @@ import argparse
 import importlib
 import numpy as np
 import torch
-import yaml
 import random
 import config
 from src.misc import attach_debugger, wandb_sweep_run_init

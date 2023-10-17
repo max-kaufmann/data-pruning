@@ -7,7 +7,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torchvision.utils import save_image
-
+import yaml
+import wandb
 import config
 
 round_float = lambda x: round(x, 3)
@@ -152,17 +153,25 @@ def wandb_sweep_run_init(args):
             config = yaml.load(file, Loader=yaml.FullLoader)
 
     run = wandb.init(config=config) #This initialises the run on the wandb side
-
-    parameter_list = [*config['parameters'].keys()]
-    title_list = [param.replace("_"," ").title() for param in parameter_list]
+    
+    """
+    During a sweep the current run's sweep parameter key-value pairs are appended
+    to the start of the wandb.config dictionary. The next three lines slice that off
+    so that we can use it for our own initialisation procedures.
+    
+    """
+    number_of_params = len(config['parameters'])
+    param_dict = wandb.config
+    param_dict = {param: param_dict[param] for param in param_dict.keys()[:number_of_params]}
     
     run_name = ""
-    for i,parameter in enumerate(config['parameters']):
-        value = getattr(wandb.config, parameter)
-        setattr(args, parameter, value) #This line initialises the run within our code by updating args
-        run_name += f"{title_list[i]} = {value} | "
+    for param, value in param_dict.items():
+        setattr(args, param, value) #This line initialises the run within our code by updating args
+        run_name += f"{param} = {value} | "
     
     run.name = run_name[:-2]
-    table = wandb.Table(columns=[*title_list,"Adversarial Accuracy"])
+    
+    param_titles = [param.replace("_"," ").title() for param in param_dict.keys()]
+    table = wandb.Table(columns=[*param_titles,"Adversarial Accuracy"])
 
-    return {"Table":table, "Parameters": parameter_list, "Run":run}
+    return {"Table":table, "Parameters": [*param_dict.values()] , "Run":run}
