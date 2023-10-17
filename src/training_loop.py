@@ -15,13 +15,13 @@ def get_remove_indices(loss_tensor,original_indices,args):
     loss_tensor_indices=torch.argsort(loss_tensor)
 
     if args.pruning_method == "high":
-        shuffled_indices_to_remove = loss_tensor_indices[-math.floor((1-args.data_proportion) * len(loss_tensor_indices)):]
+        shuffled_indices_to_remove = loss_tensor_indices[math.floor(args.data_proportion * len(loss_tensor_indices)):]
         indices_to_remove = original_indices[shuffled_indices_to_remove.cpu()]
     elif args.pruning_method == "low":
-        shuffled_indices_to_remove = loss_tensor_indices[math.floor((1-args.data_proportion) * len(loss_tensor_indices)):]
+        shuffled_indices_to_remove = loss_tensor_indices[:math.floor((1-args.data_proportion) * len(loss_tensor_indices))]
         indices_to_remove = original_indices[shuffled_indices_to_remove.cpu()]
     elif args.pruning_method == "low+high":
-        shuffled_indices_to_remove = torch.cat([loss_tensor_indices[:math.floor((1-args.data_proportion) * len(loss_tensor_indices))//2], loss_tensor_indices[-math.floor(args.data_proportion * len(loss_tensor_indices))//2:]])
+        shuffled_indices_to_remove = torch.cat([loss_tensor_indices[:math.floor((1-args.data_proportion) * len(loss_tensor_indices))//2], loss_tensor_indices[-math.floor((1-args.data_proportion) * len(loss_tensor_indices))//2:]])
         indices_to_remove = original_indices[shuffled_indices_to_remove.cpu()]
     elif args.pruning_method == "random":
         indices_to_remove = np.random.choice(original_indices, math.floor((1-args.data_proportion) * len(original_indices)), replace=False)

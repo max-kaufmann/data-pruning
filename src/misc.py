@@ -144,7 +144,7 @@ def wandb_sweep_run_init(args):
     Names the run.
 
     Outputs a wandb table object and 
-    "data_for_table" object which is a list of the hyperparameters
+    "data for table" object which is a list of the hyperparameters
     that we want logged in the table.
     
     """
@@ -174,4 +174,4 @@ def wandb_sweep_run_init(args):
     param_titles = [param.replace("_"," ").title() for param in param_dict.keys()]
     table = wandb.Table(columns=[*param_titles,"Adversarial Accuracy"])
 
-    return {"Table":table, "Parameters": [*param_dict.values()] , "Run":run}
+    return {"Table":table, "data for table": [*param_dict.values()] , "Run":run}

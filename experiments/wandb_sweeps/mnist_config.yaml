@@ -2,8 +2,6 @@ program: train.py
 method: grid
 name: mnist_p_sweep
 parameters:
-  attack:
-    values: ["rs_fgsm_test","rs_fgsm"]
   data_proportion:
     values: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 command:
@@ -22,6 +20,8 @@ command:
   - "0.3"
   - "--step_size"
   - "0.375"
+  - "--attack"
+  - "rs_fgsm"
   - "--eval_attack"
   - "auto_attack"
   - "--eval_batch_size"
