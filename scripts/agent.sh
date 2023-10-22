@@ -4,7 +4,7 @@
 
 date;hostname;id;pwd
 source ~/.bashrc
-export WANDB_API_KEY=$3
+export WANDB_API_KEY= 
 conda activate base
 source /opt/rh/devtoolset-10/enable
 

@@ -1,0 +1,40 @@
+program: train.py
+method: grid
+name: mnist_p_sweep
+parameters:
+  data_proportion:
+    values: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+command:
+  - python
+  - ${program}
+  - "--wandb_sweep"
+  - "--num_epochs"
+  - "10"
+  - "--pruning_epoch"
+  - "1"
+  - "--pruning_method"
+  - "random"
+  - "--lr_max"
+  - "0.005"
+  - "--epsilon"
+  - "0.3"
+  - "--step_size"
+  - "0.375"
+  - "--attack"
+  - "rs_fgsm"
+  - "--eval_attack"
+  - "auto_attack"
+  - "--eval_batch_size"
+  - "10000"
+  - "--num_logs_per_epoch"
+  - "1"
+  - "--early_stopping"
+  - "--early_stopping_patience"
+  - "8"
+  - "--num_workers"
+  - "2"
+  - "--seed"
+  - "100"
+
+
+

@@ -1,0 +1,45 @@
+program: train.py
+method: grid
+name: cifar10_p_sweep
+parameters:
+  data_proportion:
+    values: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+  repeat:
+    values: [1,2,3,4,5]
+command:
+  - python
+  - ${program}
+  - "--wandb_sweep"
+  - "--dataset"
+  - "cifar10"
+  - "--architecture"
+  - "preactresnet18"
+  - "--optimizer"
+  - "sgd"
+  - "--momentum"
+  - "0.9"
+  - "--weight_decay"
+  - "0.0005"
+  - "--num_epochs"
+  - "30"
+  - "--pruning_epoch"
+  - "1"
+  - "--pruning_method"
+  - "random"
+  - "--lr_max"
+  - "0.005"
+  - "--attack"
+  - "rs_fgsm"
+  - "--epsilon"
+  - "0.031"
+  - "--step_size"
+  - "0.039"
+  - "--eval_attack"
+  - "auto_attack"
+  - "--num_logs_per_epoch"
+  - "0"
+  - "--eval_batch_size"
+  - "500"
+  - "--num_workers"
+  - "2"
+

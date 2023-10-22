@@ -36,4 +36,5 @@ class PrunableDataset(torch.utils.data.Dataset):
         mask = np.ones(shape=len(self.data),dtype=bool)
         mask[indices] = False
         self.data.data = self.data.data[mask]
-        self.data.targets = self.data.targets[mask]
+        self.data.targets = self.targets[mask]
+        

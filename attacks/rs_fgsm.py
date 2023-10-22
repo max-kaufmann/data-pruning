@@ -20,7 +20,7 @@ class FGSM(AttackInstance):
                 x, -epsilon, epsilon)
         else:
             raise ValueError(
-                f"Distance metric must be either 'l2' or 'inf',was {args.distance_metric}"
+                f"Distance metric must be either 'l2' or 'linf',was {args.distance_metric}"
             )
 
     def generate_attack(self,model,xs,ys):
@@ -37,7 +37,7 @@ class FGSM(AttackInstance):
         grad = torch.autograd.grad(loss, adv_inputs, only_inputs=True)[0]
 
         adv_delta = self.step_size * torch.sign(grad)
-        adv_delta = self.project_tensor(adv_delta, self.epsilon)
+        adv_delta = self.project_tensor(delta + adv_delta, self.epsilon)
         adv_inputs = torch.clamp(xs + adv_delta, 0, 1)
 
         return adv_inputs.detach()

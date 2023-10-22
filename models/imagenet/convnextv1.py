@@ -183,27 +183,17 @@ def convnext_large(pretrained=False, in_22k=False, **kwargs):
 
 sizes = [28, 50, 89, 198]
 def get_model(args):
-    weights = args.weights
+    arch_variant = args.arch_variant
     
-    if weights == "tiny":
+    if arch_variant == "tiny":
         model = convnext_tiny(pretrained=False, in_22k=False)
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnextv1/convnext_{sizes[0]}M")["model"]
-        model.load_state_dict(sd)
-    elif weights == "small":
+    elif arch_variant == "small":
         model = convnext_small(pretrained=False, in_22k=False)
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnextv1/convnext_{sizes[1]}M")["model"]
-        model.load_state_dict(sd)
-    elif weights == "base":
+    elif arch_variant == "base":
         model = convnext_base(pretrained=False, in_22k=False)
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnextv1/convnext_{sizes[2]}M")["model"]
-        model.load_state_dict(sd)
-    elif weights == "large":
+    elif arch_variant == "large":
         model = convnext_large(pretrained=False, in_22k=False)
-        sd = torch.load(config.project_path + f"models/imagenet/data/weights/convnextv1/convnext_{sizes[3]}M")["model"]
-        model.load_state_dict(sd)
     else:
         model = convnext_large(pretrained=False, in_22k=False)
-        sd = torch.load(args.weights)
-
 
     return model

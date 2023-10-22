@@ -7,7 +7,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torchvision.utils import save_image
-
+import yaml
+import wandb
 import config
 
 round_float = lambda x: round(x, 3)
@@ -136,3 +137,41 @@ def attach_debugger(port=5678):
 
     debugpy.wait_for_client()
     print(f"Debugger attached on port {port}")
+
+def wandb_sweep_run_init(args):
+    """
+    Updates sweep parameters at the start of each run of the sweep.
+    Names the run.
+
+    Outputs a wandb table object and 
+    "data for table" object which is a list of the hyperparameters
+    that we want logged in the table.
+    
+    """
+
+    with open("./experiments/wandb_sweeps/" + args.dataset + "_config.yaml") as file:
+            config = yaml.load(file, Loader=yaml.FullLoader)
+
+    run = wandb.init(config=config) #This initialises the run on the wandb side
+    
+    """
+    During a sweep the current run's sweep parameter key-value pairs are appended
+    to the start of the wandb.config dictionary. The next three lines slice that off
+    so that we can use it for our own initialisation procedures.
+    
+    """
+    number_of_params = len(config['parameters'])
+    param_dict = wandb.config
+    param_dict = {param: param_dict[param] for param in param_dict.keys()[:number_of_params]}
+    
+    run_name = ""
+    for param, value in param_dict.items():
+        setattr(args, param, value) #This line initialises the run within our code by updating args
+        run_name += f"{param} = {value} | "
+    
+    run.name = run_name[:-2]
+    
+    param_titles = [param.replace("_"," ").title() for param in param_dict.keys()]
+    table = wandb.Table(columns=[*param_titles,"Adversarial Accuracy"])
+
+    return {"Table":table, "data for table": [*param_dict.values()] , "Run":run}

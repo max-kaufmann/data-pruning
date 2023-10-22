@@ -364,29 +364,16 @@ def ResNet50_standard(**kwargs):
     return ResNet_standard(Bottleneck_standard, [3,4,6,3], **kwargs)
 
 def get_model(args):
-    weights = args.weights
-    if weights == 'standard':
+    arch_variant = args.arch_variant
+    if arch_variant == 'standard':
         model = ResNet50_standard()
-        model.load_state_dict(torch.load(config.project_path + "models/cifar10/weights/standard_resnet50.pt",map_location=config.device))
-    elif weights == 'robust':
+    elif arch_variant == 'robust':
         model = ResNet50_robust()
-        sd = torch.load(config.project_path + "/models/cifar10/weights/robust_resnet50.pt",map_location=config.device)['state_dict']
-        sd = {k.replace('module.',''):v for k,v in sd.items()}
-        sd = {k.replace('model.',''):v for k,v in sd.items() if k.startswith('model.')}
-        model.load_state_dict(sd)
-    elif weights == "pixmix":
-        model = ResNet50_standard()
     else:
         # This definition seems to be different from the definition in the robustness library and cannot properly load weights.
         # model = ResNet50_standard()
         # I will use the robustness library instead
         from robustness.cifar_models import ResNet50
         model = ResNet50()
-        state = torch.load(weights, map_location=config.device)
-        if 'model' in state.keys() or 'state_dict' in state.keys():
-            state = state['state_dict'] if 'state_dict' in state.keys() else state['model']
-        if 'module.' in next(iter(state.keys())):
-            state = {k.replace('module.model.', ''): v for k, v in state.items() if 'module.model.' in k}
-        model.load_state_dict(state)
 
     return model
