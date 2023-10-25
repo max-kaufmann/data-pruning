@@ -166,7 +166,7 @@ def wandb_sweep_run_init(args):
     
     run_name = ""
     for param, value in param_dict.items():
-        if param not in args:
+        if param not in args and param != "repeat":
             raise AttributeError(f"args does not have the attribute '{param}'")
         setattr(args, param, value) #This line initialises the run within our code by updating args
         run_name += f"{param} = {value} | "
