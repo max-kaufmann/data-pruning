@@ -73,11 +73,10 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
 
             xs, ys = xs.to(args.device), ys.to(args.device)
             
-            adv_xs = train_attack.generate_attack(model,xs, ys) 
+            adv_xs = train_attack.generate_attack(model, xs, ys) 
             logits = model(adv_xs)
 
-
-            loss = F.cross_entropy(logits, ys,reduction="none")
+            loss = F.cross_entropy(logits, ys, reduction="none")
 
             if is_pruning_epoch and args.pruning_method != "random":
                 loss_list.append(loss)

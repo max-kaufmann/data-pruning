@@ -26,20 +26,14 @@ class FGSM(AttackInstance):
     def generate_attack(self, model,xs,ys):
 
         xs, ys = xs.to(config.device), ys.to(config.device)
-        
-        delta = torch.zeros_like(xs)
-        delta.requires_grad = True
 
-        adv_inputs = (xs + delta)
-        logits = model(adv_inputs)
+        logits = model(xs)
         loss = F.cross_entropy(logits, ys)
-        loss.backward()
-        grad = delta.grad.detach()
+        grad = torch.autograd.grad(loss, xs, only_inputs=True)[0]
 
-        delta.data = self.project_tensor(delta + self.step_size * torch.sign(grad), self.epsilon)
-        delta.data = torch.max(torch.min(1-xs, delta.data), 0-xs)
-        delta = delta.detach()
-        adv_inputs = torch.clamp(xs + delta, 0, 1)
+        adv_delta = self.step_size * torch.sign(grad)
+        adv_delta = self.project_tensor(adv_delta, self.epsilon)
+        adv_inputs = torch.clamp(xs + adv_delta, 0, 1)
 
         return adv_inputs.detach()
 

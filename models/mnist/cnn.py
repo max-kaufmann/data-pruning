@@ -26,6 +26,6 @@ def get_model(args):
 
     model = mnist_net()
 
-    #model_normalized = nn.Sequential(transforms.Normalize(mn,std),model) #TODO: CHECK THESE DON'T CHANGE
+    model_normalized = nn.Sequential(transforms.Normalize(mn,std),model) #TODO: CHECK THESE DON'T CHANGE
 
-    return  model#_normalized
+    return  model_normalized

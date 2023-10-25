@@ -4,3 +4,4 @@ venv
 wandb
 data
 fast_adversarial
+.vscode

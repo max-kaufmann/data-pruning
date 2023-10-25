@@ -66,7 +66,7 @@ def get_parser():
                         type=str,
                         default="cnn",
                         help="This specified the model architecture which is being tested")
-    
+        
     parser.add_argument("--arch_variant",
                         type=str,
                         default=None,

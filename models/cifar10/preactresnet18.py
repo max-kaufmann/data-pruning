@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torchvision.transforms as transforms
 import config
 from torchvision.models.resnet import conv3x3, _resnet
+from project_datasets.cifar10.cifar10_config import mean,std
 
 class PreactBasicBlock(nn.Module):
     expansion = 1
@@ -57,4 +58,6 @@ class PreactBasicBlock(nn.Module):
 def get_model(args):
     model = _resnet(block = PreactBasicBlock, layers = [2,2,2,2], weights = None, progress = True)
     model.fc = nn.Linear(model.fc.in_features, 10)
-    return model
+    model_normalized = nn.Sequential(transforms.Normalize(mean,std),model) #TODO: CHECK THESE DON'T CHANGE
+
+    return  model_normalized

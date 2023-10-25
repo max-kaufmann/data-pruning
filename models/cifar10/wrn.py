@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import d.cifar10.cifar10_config as c10_config
 import torchvision.transforms as transforms
 import config
+from project_datasets.cifar10.cifar10_config import mean,std
 
 
 
@@ -180,4 +181,7 @@ class WideResNet(nn.Module):
 
 def get_model(args):
     model = WideResNet()
-    return model
+    model_normalized = nn.Sequential(transforms.Normalize(mean,std),model) #TODO: CHECK THESE DON'T CHANGE
+
+    return  model_normalized
+

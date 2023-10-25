@@ -3,8 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 from robustness.tools.custom_modules import SequentialWithArgs, FakeReLU
-import config
-
+from project_datasets.cifar10.cifar10_config import mean,std
 #Robust models taken from https://github.com/MadryLab/robustness
 class BasicBlock_robust(nn.Module):
     expansion = 1
@@ -376,4 +375,7 @@ def get_model(args):
         from robustness.cifar_models import ResNet50
         model = ResNet50()
 
-    return model
+    model_normalized = nn.Sequential(transforms.Normalize(mean,std),model) #TODO: CHECK THESE DON'T CHANGE
+
+    return  model_normalized
+
