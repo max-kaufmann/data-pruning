@@ -105,7 +105,7 @@ def get_parser():
 
     parser.add_argument("--attack",
                         type=str,
-                        default="fgsm",
+                        default="rs_fgsm",
                         choices=config.attack_list,
                         help="Name of the attack to evaluate against.")
 
@@ -246,7 +246,7 @@ def get_parser():
 
     parser.add_argument("--debug_port",
                         type=int,
-                        default=5768,
+                        default=5678,
                         help="The process ID of the process to attach to when running in debug mode."
                         )
     
@@ -393,7 +393,6 @@ def get_attack(name, args):
 
 
 if __name__ == "__main__":
-
     args = get_parser().parse_args()
 
     if args.debug:

@@ -9,7 +9,7 @@ parameters:
   repeat: 
     values: [1,2,3,4,5]
 command:
-  - python
+  - ./venv/Scripts/python
   - ${program}
   - "--wandb_sweep"
   - "--num_epochs"
@@ -35,6 +35,5 @@ command:
   - "8"
   - "--num_workers"
   - "2"
-
 
 
