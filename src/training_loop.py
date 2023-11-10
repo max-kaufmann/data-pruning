@@ -157,9 +157,9 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
             train_dataset.remove_indices(indices_to_remove)
 
             if not args.no_wandb:
-                wandb.log({"Class Distribution": train_dataset.class_count()})
+                wandb.log({"Class Distribution": train_dataset.class_dist()})
             else:
-                print(f"Class Distribution: {train_dataset.class_count()}")
+                print(f"Class Distribution: {train_dataset.class_dist()}")
             
     
     if args.num_logs_per_epoch == 0:

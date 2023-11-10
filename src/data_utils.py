@@ -38,12 +38,12 @@ class PrunableDataset(torch.utils.data.Dataset):
         self.data.data = self.data.data[mask]
         self.data.targets = self.targets[mask]
 
-    def class_count(self):
+    def class_dist(self):
         num_classes = np.max(self.data.targets) + 1
-        class_count = [None]*num_classes
+        class_count = torch.tensor([None]*num_classes)
         for i in range(0,num_classes):
             class_count[i] = sum(self.data.targets == i)
-        return torch.tensor(class_count)
+        return class_count/sum(class_count)
 
 
         
