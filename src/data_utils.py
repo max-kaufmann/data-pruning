@@ -1,6 +1,14 @@
 
 import numpy as np 
+import os
 import torch
+import pandas as pd
+from pathlib import Path
+import json
+import wandb
+from tqdm import tqdm
+import concurrent.futures
+import shutil
 
 class ShuffledDataset(torch.utils.data.Dataset):
 
@@ -45,5 +53,37 @@ class PrunableDataset(torch.utils.data.Dataset):
             class_count[i] = sum(self.data.targets == i)
         return class_count/sum(class_count)
 
+def download_table(run, current_analysis):
+    try:
+        run_name = f"run-{run.id}"
+        run_path = Path(run.dir).parts
+        table_remote = current_analysis.use_artifact(
+            f"{run_path[-3]}/{run_path[-2]}/{run_name}-Table:v0", type="run_table"
+        )
+        table_dir = table_remote.download()
+        table_json = json.load(
+            open(f"{table_dir}/Table.table.json")
+        )
+        table_wandb = wandb.Table.from_json(table_json, table_remote)
+        table_local = pd.DataFrame(
+            data=table_wandb.data, columns=table_wandb.columns
+        ).copy()
+        return table_local
+    except Exception as e:
+        print(f"Error downloading table for run {run.id}: {e}")
+        return None
 
-        
+def download_sweep_table(sweep, current_analysis):
+    runs = sweep.runs
+    tables = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit(download_table, run, current_analysis) for run in runs]
+        for future in concurrent.futures.as_completed(futures):
+            table_local = future.result()
+            if table_local is not None:
+                tables.append(table_local)
+    sweep_table = pd.concat(tables).reset_index(drop=True)
+    sweep_table.to_csv("table.csv")
+    shutil.rmtree('./artifacts')
+
+     
