@@ -21,8 +21,6 @@ command:
 - --num_logs_per_epoch
 - '1'
 - --early_stopping
-- --early_stopping_patience
-- '8'
 - --num_workers
 - '2'
 method: grid

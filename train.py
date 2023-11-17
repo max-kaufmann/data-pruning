@@ -2,18 +2,20 @@ import argparse
 import importlib
 import numpy as np
 import torch
+import csv
 import random
 import config
 from src.misc import attach_debugger, wandb_sweep_run_init
 from src.training_loop import train
 from evaluate import evaluate
+from operator import itemgetter
 
 global wandb
 
 def main(args):
 
     if args.wandb_sweep:
-        table, sweep_parameters, run = wandb_sweep_run_init(args).values()
+        dataframe, sweep_parameters, run = wandb_sweep_run_init(args).values()
     elif not args.no_wandb:
         wandb.init(project=args.wandb_project_name, name=args.experiment_name, config=args)
 
@@ -45,11 +47,12 @@ def main(args):
         print(f'Attack: {args.eval_attack} | Adversarial Accuracy: {"%.3f" % adv_accuracy}')
     else:
         optimizer = get_optimizer(args.optimizer, model, args)
-        adv_accuracy = train(model, train_dataset, eval_dataset, optimizer, train_attack, eval_attack, args)["adv_accuracy"]
+        adv_accuracy, class_dist = itemgetter("adv_accuracy","class_dist")(train(model, train_dataset, eval_dataset, optimizer, train_attack, eval_attack, args))
 
     if args.wandb_sweep:
-        table.add_data(*sweep_parameters,adv_accuracy)
-        run.log({"Table": table})
+        dataframe.loc[len(dataframe)]=[*sweep_parameters,class_dist,adv_accuracy]
+        run.log({"Table": wandb.Table(data=dataframe)})
+        dataframe.to_json(f"./experiments/wandb_sweeps/logs/{wandb.config._settings.sweep_id}/dataframe/{run.id}.json")
     
     if args.save_model is not None:
         torch.save(model.state_dict(), args.save_model)
@@ -272,8 +275,9 @@ def get_parser():
     
     parser.add_argument("--wandb_sweep",
                         action="store_true",
-                        help="Whether or not a wandb sweep is happening.",
+                        help="Whether or not a wandb sweep is happening."
                         )
+    
     
     """ 
     When wandb_sweep = True, main knows to initialise the sweep hyperparameters properly,
@@ -287,7 +291,7 @@ def get_parser():
 
     parser.add_argument("--early_stopping_patience",
                         type=int,
-                        default=5,
+                        default=8,
                         help="The number of epochs to wait before early stopping.")
 
     return parser

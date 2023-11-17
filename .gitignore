@@ -5,3 +5,5 @@ wandb
 data
 fast_adversarial
 .vscode
+experiments/wandb_sweeps/logs
+testing_notebook.ipynb

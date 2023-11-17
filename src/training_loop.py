@@ -1,5 +1,6 @@
 from src.data_utils import ShuffledDataset, PrunableDataset
 import torch
+import pandas as pd
 import time
 import copy
 import wandb
@@ -155,12 +156,6 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
                 indices_to_remove = get_remove_indices(loss_tensor,shuffled_index,args)
             
             train_dataset.remove_indices(indices_to_remove)
-
-            if not args.no_wandb:
-                wandb.log({"Class Distribution": train_dataset.class_dist()})
-            else:
-                print(f"Class Distribution: {train_dataset.class_dist()}")
-            
     
     if args.num_logs_per_epoch == 0:
         final_accuracy = evaluate(model, eval_dataloader, eval_attack, args)["test_accuracy"]
@@ -175,7 +170,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
     else:
         print(f"Advesraial accuracy: {final_accuracy}")
 
-    return {"model": model, "adv_accuracy": final_accuracy}
+    return {"model": model, "adv_accuracy": final_accuracy, "class_dist": train_dataset.class_dist()}
 
             
 

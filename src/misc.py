@@ -3,6 +3,7 @@ import os
 
 import debugpy
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -12,7 +13,6 @@ import wandb
 import config
 
 round_float = lambda x: round(x, 3)
-
 
 def visualise_attack(model, attack, inputs, targets, dataset_classes):
 
@@ -57,10 +57,8 @@ def visualise_attack(model, attack, inputs, targets, dataset_classes):
 
     plt.show()
 
-
 def tensor_to_image(tensor):
     return tensor.permute(1,2,0).detach().cpu()
-
 
 def plot_image_batch(batch, display_type="square"):
 
@@ -126,10 +124,8 @@ def store_images(stand_imgs, adv_imgs, img_num, args):
 
     save_image(img, os.path.join(args.image_dir, f"{img_num}.png"))
 
-
 def results_file_to_df(path):
     return pd.read_json(path, lines=True)
-
 
 def attach_debugger(port=5678):
     debugpy.listen(port)
@@ -137,6 +133,16 @@ def attach_debugger(port=5678):
 
     debugpy.wait_for_client()
     print(f"Debugger attached on port {port}")
+
+def reset_wandb_env():
+    """Workaround helper function to solve the wandb.init() overwriting problem:
+    When you call wandb.sweep then wandb.agent and then (after the sweep finishes) wandb.init
+    all from the same script, the run created by wandb.init() will overwrite the last run of 
+    the sweep, even if wandb.finish is called before wandb.init(). This function resets the 
+    wandb env variables, forcing a new run to be started."""
+    for key in os.environ.keys():
+        if key.startswith("WANDB_"):
+            del os.environ[key]
 
 def wandb_sweep_run_init(args):
     """
@@ -148,32 +154,19 @@ def wandb_sweep_run_init(args):
     that we want logged in the table.
     
     """
+    run = wandb.init() #This initialises the run on the wandb side
 
-    with open("./experiments/wandb_sweeps/" + args.dataset + "_config.yaml") as file:
-            config = yaml.load(file, Loader=yaml.FullLoader)
-
-    run = wandb.init(config=config) #This initialises the run on the wandb side
-    
-    """
-    During a sweep the current run's sweep parameter key-value pairs are appended
-    to the start of the wandb.config dictionary. The next three lines slice that off
-    so that we can use it for our own initialisation procedures.
-    
-    """
-    number_of_params = len(config['parameters'])
-    param_dict = wandb.config
-    param_dict = {param: param_dict[param] for param in param_dict.keys()[:number_of_params]}
-    
+    param_dict = dict(wandb.config)
     run_name = ""
     for param, value in param_dict.items():
         if param not in args and param != "repeat":
             raise AttributeError(f"args does not have the attribute '{param}'")
         setattr(args, param, value) #This line initialises the run within our code by updating args
-        run_name += f"{param} = {value} | "
+        run_name += f"__{param}_{value}"
     
-    run.name = run_name[:-2]
+    run.name = wandb.config._settings.sweep_id + run_name
     
     param_titles = [param.replace("_"," ").title() for param in param_dict.keys()]
-    table = wandb.Table(columns=[*param_titles,"Adversarial Accuracy"])
+    dataframe = pd.DataFrame(columns=[*param_titles,"Class Distribution","Adversarial Accuracy"])
 
-    return {"Table":table, "data for table": [*param_dict.values()] , "Run":run}
+    return {"DataFrame":dataframe, "data for table": [*param_dict.values()] , "Run":run}
