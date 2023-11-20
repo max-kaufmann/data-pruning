@@ -62,7 +62,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
         train_dataloader = torch.utils.data.DataLoader(train_dataset_shuffled, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
         train_loader_size = len(train_dataloader)
 
-        is_pruning_epoch = epoch + 1 == args.pruning_epoch and args.data_proportion != 1
+        is_pruning_epoch = epoch + 1 == args.pruning_epoch
 
         if is_pruning_epoch:
             loss_list = []
@@ -127,35 +127,42 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
         
         if is_pruning_epoch:
             
-            if args.pruning_method != "random":
-                loss_tensor = torch.cat(loss_list)
-            else:
-                loss_tensor = torch.tensor(loss_list)
-
-            shuffled_index = train_dataset_shuffled.get_indices()
+            if args.data_proportion !=1:
             
-            if args.systematic_sampling:
+                if args.pruning_method != "random":
+                    loss_tensor = torch.cat(loss_list)
+                else:
+                    loss_tensor = torch.tensor(loss_list)
+
+                shuffled_index = train_dataset_shuffled.get_indices()
                 
-                original_targets = train_dataset.targets
-                shuffled_targets = original_targets[shuffled_index]
+                if args.systematic_sampling:
+                    
+                    original_targets = train_dataset.targets
+                    shuffled_targets = original_targets[shuffled_index]
 
-                num_classes = np.max(original_targets) + 1
+                    num_classes = np.max(original_targets) + 1
 
-                list_of_indices_to_remove = []
-                for i in range(0,num_classes):
+                    list_of_indices_to_remove = []
+                    for i in range(0,num_classes):
 
-                    shuffled_targets_class_mask = shuffled_targets == i
-                    original_indices = shuffled_index[shuffled_targets_class_mask]
-                    loss_tensor_class = loss_tensor[shuffled_targets_class_mask]
+                        shuffled_targets_class_mask = shuffled_targets == i
+                        original_indices = shuffled_index[shuffled_targets_class_mask]
+                        loss_tensor_class = loss_tensor[shuffled_targets_class_mask]
 
-                    indices_to_remove = get_remove_indices(loss_tensor_class,original_indices,args)
-                    list_of_indices_to_remove.append(indices_to_remove) 
-                
-                indices_to_remove = np.concatenate(list_of_indices_to_remove)
+                        indices_to_remove = get_remove_indices(loss_tensor_class,original_indices,args)
+                        list_of_indices_to_remove.append(indices_to_remove) 
+                    
+                    indices_to_remove = np.concatenate(list_of_indices_to_remove)
+                else:
+                    indices_to_remove = get_remove_indices(loss_tensor,shuffled_index,args)
+                    
+                train_dataset.remove_indices(indices_to_remove)
+            
             else:
-                indices_to_remove = get_remove_indices(loss_tensor,shuffled_index,args)
-                
-            train_dataset.remove_indices(indices_to_remove)
+                """PrunableDataset.remove_indices turns PrunableDataset.data.targets into an np.array (from a torch.Tensor). 
+                If data prop = 1 we dont prune but we still need to convert to numpy.array for PrunableDataset.class_dist()""" 
+                train_dataset.data.targets = torch.Tensor.numpy(train_dataset.data.targets)  
             
     if args.num_logs_per_epoch == 0:
         final_accuracy = evaluate(model, eval_dataloader, eval_attack, args)["test_accuracy"]
