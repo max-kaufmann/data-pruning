@@ -21,20 +21,24 @@ def main(args):
     sweep_id = os.path.basename(sweep_id_full)
     os.makedirs(f"./experiments/wandb_sweeps/logs/{sweep_id}/dataframe/")
     wandb.agent(sweep_id_full)
+    
+    final_run = wandb.init().id
+    wandb.finish
     reset_wandb_env()
+    
     dataframe = aggregate_dataframe(sweep_id)
     dataframe.to_json(f"./experiments/wandb_sweeps/logs/{sweep_id}/table.json")
 
     if args.t_test is not None or args.class_dist:
-        current_init = wandb.init(name=f"Extra data for {sweep_id}")
+        final_run = wandb.init(id=final_run, resume='allow')
         if args.t_test is not None:
             results = t_test(dataframe,*args.t_test)
             print(results)
-            current_init.log({"t Test": wandb.Table(data=results)})
+            final_run.log({"t Test": wandb.Table(data=results)})
         if args.class_dist:
             class_dist = mean_class_dist(dataframe)
             print(class_dist)
-            current_init.log({"Class Distribution":wandb.Table(data=class_dist)})
+            final_run.log({"Class Distribution":wandb.Table(data=class_dist)})
 
 def parse_args():
 
@@ -55,19 +59,7 @@ def parse_args():
     args = parser.parse_args()
 
     return args
-
-def create_experiment_dir(name):
-    """Creates experiment directory. Handles duplicate sweep names. Returns new name to update config."""
-    new_name = name
-    duplicates = 0
-    while os.path.exists(f"./experiments/wandb_sweeps/{new_name}/") and duplicates < 10:
-        duplicates += 1
-        new_name = f"{name}_{duplicates}"
-    if duplicates == 10:
-        raise Exception(f"There are already 10 sweeps called '{name}', please rename sweep and restart.")
-    os.makedirs(f"./experiments/wandb_sweeps/{new_name}/dataframe/")
-    return new_name
-    
+   
 if __name__ == "__main__":
 
     args = parse_args()

@@ -47,8 +47,8 @@ class PrunableDataset(torch.utils.data.Dataset):
         self.data.targets = self.targets[mask]
 
     def class_dist(self):
-        classes = sorted(set(self.data.targets))
-        return [sum(self.data.targets == i)/self.__len__() for i in classes]
+        classes = torch.unique(self.data.targets)
+        return [sum(self.data.targets == i).item()/self.__len__() for i in classes]
 
 
 #the next two functions are adapted from: 

@@ -154,9 +154,9 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
                 indices_to_remove = np.concatenate(list_of_indices_to_remove)
             else:
                 indices_to_remove = get_remove_indices(loss_tensor,shuffled_index,args)
-            
+                
             train_dataset.remove_indices(indices_to_remove)
-    
+            
     if args.num_logs_per_epoch == 0:
         final_accuracy = evaluate(model, eval_dataloader, eval_attack, args)["test_accuracy"]
     elif args.early_stopping:
