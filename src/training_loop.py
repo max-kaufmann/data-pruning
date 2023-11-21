@@ -159,9 +159,9 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
                     
                 train_dataset.remove_indices(indices_to_remove)
             
-            else:
-                """PrunableDataset.remove_indices turns PrunableDataset.data.targets into an np.array (from a torch.Tensor). 
-                If data prop = 1 we dont prune but we still need to convert to numpy.array for PrunableDataset.class_dist()""" 
+            elif isinstance(train_dataset.data.targets, torch.Tensor):
+                """PrunableDataset.remove_indices turns PrunableDataset.data.targets into an np.array (from either a torch.Tensor in the case of MNIST or a list in the case of CIFAR10). 
+                If data prop = 1 we dont prune but we still need to convert any torch.Tensors to numpy.arrays in order for PrunableDataset.class_dist() to work.""" 
                 train_dataset.data.targets = torch.Tensor.numpy(train_dataset.data.targets)  
             
     if args.num_logs_per_epoch == 0:

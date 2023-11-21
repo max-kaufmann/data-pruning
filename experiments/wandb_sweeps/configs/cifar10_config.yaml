@@ -3,9 +3,9 @@ method: grid
 name: cifar10_p_sweep
 parameters:
   data_proportion:
-    values: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
+    values: [0.9,1.0]
   repeat:
-    values: [1,2,3,4,5]
+    values: [1,2]
 command:
   - python
   - ${program}
@@ -21,13 +21,13 @@ command:
   - "--weight_decay"
   - "0.0005"
   - "--num_epochs"
-  - "30"
+  - "2"
   - "--pruning_epoch"
   - "1"
   - "--pruning_method"
   - "random"
   - "--lr_max"
-  - "0.005"
+  - "0.2"
   - "--attack"
   - "rs_fgsm"
   - "--epsilon"
@@ -35,7 +35,7 @@ command:
   - "--step_size"
   - "0.039"
   - "--eval_attack"
-  - "auto_attack"
+  - "pgd"
   - "--num_logs_per_epoch"
   - "0"
   - "--eval_batch_size"

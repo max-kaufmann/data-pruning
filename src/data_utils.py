@@ -34,7 +34,6 @@ class PrunableDataset(torch.utils.data.Dataset):
 
     def __getitem__(self,index):
         data,target = self.data[index]
-
         return data,target
 
     def __len__(self):
@@ -120,8 +119,8 @@ def mean_class_dist(dataframe):
     for dp in sorted(set(dataframe["Data Proportion"])):
         for pm in set(dataframe["Pruning Method"]):
             class_dists = dataframe[(dataframe["Pruning Method"]==pm) & (dataframe["Data Proportion"]==dp)]
-            arr = np.array(class_dists['Class Distribution'].to_list())
-            mean_class_dist.loc[len(mean_class_dist)] = [pm,dp,np.mean(arr, axis=0)]
+            arr = np.array(class_dists['Class Distribution'])
+            mean_class_dist.loc[len(mean_class_dist)] = [pm,dp,np.mean(arr, axis=0).tolist()]
     return mean_class_dist
 
 
