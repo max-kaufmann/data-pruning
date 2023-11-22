@@ -47,10 +47,10 @@ def parse_args():
     parser.add_argument('--dataset', default='mnist', type=str)
     
     parser.add_argument('--t_test', 
-                        nargs=2, 
+                        nargs=4, 
                         default=None, 
-                        help= "Both args should be pruning methods. The second will be tested against the first to see if it gives a larger mean adversarial accuracy.")
-    
+                        help= "Arg1: constant, Arg2: var, Arg3: var_1, Arg4: var_2, see src.data_utils.t_test for more details."
+    )    
     parser.add_argument('--class_dist', 
                         action="store_true", 
                         help="Whether to log mean class distribution across repeated runs. class distribution is automatically logged for each individual run."

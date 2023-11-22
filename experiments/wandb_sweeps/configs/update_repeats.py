@@ -1,6 +1,6 @@
 import yaml
 #script to update number of repeats in wandb sweep config file
-n = 30  
+n = 120  
 config_file = '.\experiments\wandb_sweeps\configs\mnist_config.yaml'
 with open(config_file, 'r') as file:
     existing_data = yaml.safe_load(file)

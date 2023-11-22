@@ -99,19 +99,25 @@ def aggregate_dataframe(sweep_name):
     shutil.rmtree(path)
     return pd.concat(frames).reset_index(drop=True)
 
-def t_test(dataframe, pruning_method_1, pruning_method_2):
+def t_test(dataframe, constant, var, var_1, var_2):
     """
-    This is a function to carry out a one sided Welch's t test on the data in a pandas dataframe.
-    H_0: pruning method 1 and 2 give adversarial accuracies with the same mean.
-    H_1: pruning method 2 gives adversarial accuracies with higher mean.
+    This is a function to carry out a one sided Welch's t test on the mean adversarial accuracy from two groups of data from a pandas dataframe, specified as follows:
+    constant: Property whose value you want to be the same for all runs that you test against each other.
+    var_1: Property whose effect on mean adversarial accuracy you suspect is smaller than that of var_2
+
+    e.g. if constant = "Pruning Method", var = "Data Proportion", var_1 = 0.6 and var_2 = 1.0 then for each pruning method we will t-test the data from all runs of that given pruning to see if a data proportion of 1.0 gives a higher mean than 0.6.
+    e.g. if constant = "Data Proportion", var = "Pruning Method",  var_1 = "random" and var_2 = "high" then for each data proportion we will t-test the data from all runs with that given data proportion to see if a pruning method of "high" gives a higher mean than "random".
+    
+    H_0: var 1 and 2 give adversarial accuracies with the same mean.
+    H_1: var 2 gives adversarial accuracies with higher mean.
 
     """
-    test_results = pd.DataFrame(columns=["Data Proportion", "t Value", "p Value"])
+    test_results = pd.DataFrame(columns=[constant, "t Value", "p Value"])
 
-    for dp in sorted(set(dataframe["Data Proportion"])):
-        sample1 = dataframe[(dataframe["Pruning Method"]==pruning_method_1) & (dataframe["Data Proportion"]==dp)]
-        sample2 = dataframe[(dataframe["Pruning Method"]==pruning_method_2) & (dataframe["Data Proportion"]==dp)]
-        test_results.loc[len(test_results)] = [dp,*list(ttest_ind(sample1['Adversarial Accuracy'], sample2['Adversarial Accuracy'], equal_var=False, alternative='less')) ]
+    for value in np.unique(dataframe[constant]):
+        sample1 = dataframe[(dataframe[var]==var_1) & (dataframe[constant]==value)]
+        sample2 = dataframe[(dataframe[var]==var_2) & (dataframe[constant]==value)]
+        test_results.loc[len(test_results)] = [value,*list(ttest_ind(sample1['Adversarial Accuracy'], sample2['Adversarial Accuracy'], equal_var=False, alternative='less')) ]
     return test_results
 
 def mean_class_dist(dataframe):
