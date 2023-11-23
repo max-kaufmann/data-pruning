@@ -95,9 +95,11 @@ def aggregate_dataframe(sweep_name):
     """The way train.py is set up means that a wandb sweep gives a json file of data for
     each run. This function aggregates them into one pandas dataframe and then deletes them."""
     path = f"./experiments/wandb_sweeps/logs/{sweep_name}/dataframe/"
-    frames = [pd.read_json(path+f) for f in os.listdir(path)]
+    frames = [pd.read_json(path+f,precise_float=True) for f in os.listdir(path)]
     shutil.rmtree(path)
-    return pd.concat(frames).reset_index(drop=True)
+    df = pd.concat(frames).reset_index(drop=True)
+    df["Data Proportion"].round(3)
+    return df
 
 def t_test(dataframe, constant, var, var_1, var_2):
     """
@@ -112,6 +114,11 @@ def t_test(dataframe, constant, var, var_1, var_2):
     H_1: var 2 gives adversarial accuracies with higher mean.
 
     """
+    try:
+        var_1,var_2 = [float(n) for n in [var_1,var_2]]
+    except ValueError:
+        pass
+    
     test_results = pd.DataFrame(columns=[constant, "t Value", "p Value"])
 
     for value in np.unique(dataframe[constant]):
