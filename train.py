@@ -8,7 +8,6 @@ import config
 from src.misc import attach_debugger, wandb_sweep_run_init
 from src.training_loop import train
 from evaluate import evaluate
-from operator import itemgetter
 
 global wandb
 
@@ -47,7 +46,7 @@ def main(args):
         print(f'Attack: {args.eval_attack} | Adversarial Accuracy: {"%.3f" % adv_accuracy}')
     else:
         optimizer = get_optimizer(args.optimizer, model, args)
-        adv_accuracy, class_dist = itemgetter("adv_accuracy","class_dist")(train(model, train_dataset, eval_dataset, optimizer, train_attack, eval_attack, args))
+        adv_accuracy, class_dist = train(model, train_dataset, eval_dataset, optimizer, train_attack, eval_attack, args)[1:]
 
     if args.wandb_sweep:
         dataframe.loc[len(dataframe)]=[*sweep_parameters,class_dist,adv_accuracy]
@@ -95,11 +94,17 @@ def get_parser():
                         type=int,
                         default=100,
                         help="The number of epochs to train for")
+    
+    parser.add_argument("--pruning_metric",
+                        type=str,
+                        default="loss",
+                        help="Which metric to base pruning on.")
 
     parser.add_argument("--pruning_method",
                         type=str,
                         default="high",
-                        choices=config.pruning_methods)
+                        choices=config.pruning_methods,
+                        help="Which values of the pruning metric will qualify a datapoint for pruning.")
     
     parser.add_argument("--systematic_sampling",
                         action="store_true",

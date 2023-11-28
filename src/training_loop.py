@@ -1,4 +1,5 @@
 from src.data_utils import ShuffledDataset, PrunableDataset
+from src.misc import deepfool
 import torch
 import pandas as pd
 import time
@@ -10,19 +11,20 @@ from tqdm import tqdm
 import math
 from evaluate import evaluate
 import attacks
+import sys
 
-def get_remove_indices(loss_tensor,original_indices,args):
+def get_remove_indices(metric_tensor,original_indices,args):
     
-    loss_tensor_indices=torch.argsort(loss_tensor)
+    metric_tensor_indices=torch.argsort(metric_tensor)
 
     if args.pruning_method == "high":
-        shuffled_indices_to_remove = loss_tensor_indices[math.floor(args.data_proportion * len(loss_tensor_indices)):]
+        shuffled_indices_to_remove = metric_tensor_indices[math.floor(args.data_proportion * len(metric_tensor_indices)):]
         indices_to_remove = original_indices[shuffled_indices_to_remove.cpu()]
     elif args.pruning_method == "low":
-        shuffled_indices_to_remove = loss_tensor_indices[:math.floor((1-args.data_proportion) * len(loss_tensor_indices))]
+        shuffled_indices_to_remove = metric_tensor_indices[:math.floor((1-args.data_proportion) * len(metric_tensor_indices))]
         indices_to_remove = original_indices[shuffled_indices_to_remove.cpu()]
     elif args.pruning_method == "low+high":
-        shuffled_indices_to_remove = torch.cat([loss_tensor_indices[:math.floor((1-args.data_proportion) * len(loss_tensor_indices))//2], loss_tensor_indices[-math.floor((1-args.data_proportion) * len(loss_tensor_indices))//2:]])
+        shuffled_indices_to_remove = torch.cat([metric_tensor_indices[:math.floor((1-args.data_proportion) * len(metric_tensor_indices))//2], metric_tensor_indices[-math.floor((1-args.data_proportion) * len(metric_tensor_indices))//2:]])
         indices_to_remove = original_indices[shuffled_indices_to_remove.cpu()]
     elif args.pruning_method == "random":
         indices_to_remove = np.random.choice(original_indices, math.floor((1-args.data_proportion) * len(original_indices)), replace=False)
@@ -65,7 +67,11 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
         is_pruning_epoch = epoch + 1 == args.pruning_epoch
 
         if is_pruning_epoch:
-            loss_list = []
+            if args.pruning_metric == "compare":
+                loss_list = []
+                distance_list = []
+            else:
+                metric_list = []
 
         for i, (xs, ys) in tqdm(enumerate(train_dataloader), desc=f"Epoch {epoch}"):
 
@@ -79,9 +85,18 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
 
             loss = F.cross_entropy(logits, ys, reduction="none")
 
-            if is_pruning_epoch and args.pruning_method != "random":
-                loss_list.append(loss)
+            if is_pruning_epoch:
+                if args.pruning_metric == "compare":
+                    loss_list.append(loss)
+                    distance_list.append(deepfool(xs,model,args))
+                elif args.pruning_metric == "loss" and args.pruning_method != "random":
+                    metric_list.append(loss)
+                elif args.pruning_metric == "distance" and args.pruning_method != "random":
+                    metric_list.append(deepfool(xs,model,args))
+                else:
+                    raise ValueError(f"Pruning metric '{args.pruning_metric}' not supported")
             
+
             loss = loss.mean()
 
             optimizer.zero_grad()
@@ -126,13 +141,24 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
                 break
         
         if is_pruning_epoch:
-            
-            if args.data_proportion !=1:
+
+            if args.pruning_metric == "compare":
+
+                loss_tensor = torch.cat(loss_list)
+                distance_tensor = torch.cat(distance_list)
+
+                data = [[x.item(),y.item()] for (x,y) in zip(distance_tensor,loss_tensor)] 
+                table = wandb.Table(data=data, columns = ["Distance", "Loss"])
+                wandb.log({"Distance vs Loss Scatter" : wandb.plot.scatter(table,"Distance", "Loss")})
+                
+                sys.exit()
+
+            elif args.data_proportion !=1:
             
                 if args.pruning_method != "random":
-                    loss_tensor = torch.cat(loss_list)
+                    metric_tensor = torch.cat(metric_list)
                 else:
-                    loss_tensor = torch.tensor(loss_list)
+                    metric_tensor = torch.tensor(metric_list)
 
                 shuffled_index = train_dataset_shuffled.get_indices()
                 
@@ -148,14 +174,14 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
 
                         shuffled_targets_class_mask = shuffled_targets == i
                         original_indices = shuffled_index[shuffled_targets_class_mask]
-                        loss_tensor_class = loss_tensor[shuffled_targets_class_mask]
+                        metric_tensor_class = metric_tensor[shuffled_targets_class_mask]
 
-                        indices_to_remove = get_remove_indices(loss_tensor_class,original_indices,args)
+                        indices_to_remove = get_remove_indices(metric_tensor_class,original_indices,args)
                         list_of_indices_to_remove.append(indices_to_remove) 
                     
                     indices_to_remove = np.concatenate(list_of_indices_to_remove)
                 else:
-                    indices_to_remove = get_remove_indices(loss_tensor,shuffled_index,args)
+                    indices_to_remove = get_remove_indices(metric_tensor,shuffled_index,args)
                     
                 train_dataset.remove_indices(indices_to_remove)
             
@@ -177,7 +203,7 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
     else:
         print(f"Advesraial accuracy: {final_accuracy}")
 
-    return {"model": model, "adv_accuracy": final_accuracy, "class_dist": train_dataset.class_dist()}
+    return  model, final_accuracy, train_dataset.class_dist()
 
             
 

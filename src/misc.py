@@ -5,12 +5,15 @@ import debugpy
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import torch
-import torch.nn.functional as F
-from torchvision.utils import save_image
 import yaml
 import wandb
 import config
+import copy
+import torch
+import torch.nn.functional as F
+from torch.linalg import norm
+from torch.autograd import Variable
+from torchvision.utils import save_image
 
 round_float = lambda x: round(x, 3)
 
@@ -100,17 +103,17 @@ def plot_image_batch(batch, display_type="square"):
                                 figsize=figsize,
                                 constrained_layout=True)
 
-        if num_images == 1:
-            axs = np.array([axs])
-
         image_index = 0
-        for row_index in range(square_size):
-            for column_index in range(square_size):
-                if image_index >= num_images:
-                    break
-                else:
-                    axs[row_index, column_index].imshow(batch[image_index])
-                image_index += 1
+        if num_images == 1:
+            axs.imshow(batch[image_index]) 
+        else:
+            for row_index in range(square_size):
+                for column_index in range(square_size):
+                    if image_index >= num_images:
+                        break
+                    else:
+                        axs[row_index, column_index].imshow(batch[image_index])
+                    image_index += 1
 
     else:
         raise Exception("Batch display type not supported")
@@ -170,3 +173,78 @@ def wandb_sweep_run_init(args):
     dataframe = pd.DataFrame(columns=[*param_titles,"Class Distribution","Adversarial Accuracy"])
 
     return {"DataFrame":dataframe, "data for table": [*param_dict.values()] , "Run":run}
+
+def deepfool(images, model, args, num_classes=10, overshoot=0.02, max_iter=5):
+
+    """
+       :param image: Image of size HxWx3
+       :param model: network (input: images, output: values of activation **BEFORE** softmax).
+       :param num_classes: num_classes (limits the number of classes to test against, by default = 10)
+       :param overshoot: used as a termination criterion to prevent vanishing updates (default = 0.02).
+       :param max_iter: maximum number of iterations for deepfool (default = 50)
+       :return: minimal perturbation that fools the classifier, number of iterations that it required, new estimated_label and perturbed image
+    """
+    images = images.to(args.device)
+    model = model.to(args.device)
+    
+    model_is_training = model.training
+    if model_is_training:
+        model.eval()
+    
+    #manage indices
+    f = model(images)
+    I = f.argsort(dim=1,descending=True)
+    I = I[:,0:num_classes]
+
+    batch_size = len(I)
+    distances = torch.zeros(batch_size)
+    
+    for n in range(batch_size):
+
+        #initialise variables
+        label = I[n,0]
+        x = copy.deepcopy(images[n])
+        x = x.unsqueeze(0)
+        x = x.to(args.device)
+        x.requires_grad = True
+        w = torch.zeros_like(x)
+        r_tot = torch.zeros_like(x)
+        loop_i = 0
+        logits = model(x)
+        k_i = label
+
+        while k_i == label and loop_i < max_iter:
+
+            pert = np.inf
+            J = torch.autograd.functional.jacobian(model,x).squeeze()
+            #is there a way of getting J and logits without two foward passes (the one in `logits = model(x)` and the one in the line above)?
+
+            for k in range(1, num_classes):
+                w_k = J[I[n,k]] - J[label]
+                f_k = logits[0,I[n,k]] - logits[0,label]
+                pert_k = abs(f_k) / norm(w_k)
+
+                # determine which w_k to use
+                if pert_k < pert:
+                    pert = pert_k
+                    w = w_k
+
+            # compute r_i and r_tot
+            # Added 1e-4 for numerical stability
+            r_i =  (pert) * w / norm(w)
+            r_tot = r_tot + r_i
+
+            x = images[n] + (1+overshoot)*r_tot 
+            x = x.detach().to(args.device)
+            x.requires_grad = True 
+            logits = model(x)
+            k_i = logits.argmax()
+
+            loop_i += 1
+
+        distances[n] = norm(r_tot)
+
+    if model_is_training:
+        model.train()
+
+    return distances.detach()
