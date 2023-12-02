@@ -1,5 +1,5 @@
 from src.data_utils import ShuffledDataset, PrunableDataset
-from src.misc import deepfool
+from src.deepfool import distance
 import torch
 import pandas as pd
 import time
@@ -88,11 +88,11 @@ def train(model : torch.nn.Module,train_dataset,eval_dataset,optimizer,train_att
             if is_pruning_epoch:
                 if args.pruning_metric == "compare":
                     loss_list.append(loss)
-                    distance_list.append(deepfool(xs,model,args))
+                    distance_list.append(distance(xs,model,args))
                 elif args.pruning_metric == "loss" and args.pruning_method != "random":
                     metric_list.append(loss)
                 elif args.pruning_metric == "distance" and args.pruning_method != "random":
-                    metric_list.append(deepfool(xs,model,args))
+                    metric_list.append(distance(xs,model,args))
                 else:
                     raise ValueError(f"Pruning metric '{args.pruning_metric}' not supported")
             
