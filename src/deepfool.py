@@ -24,7 +24,7 @@ def distance(images, model, args, num_classes=10, overshoot=0.02, max_iter=5):
     I = initial_logits.argsort(dim=1,descending=True)
     I = I[:,0:num_classes]
     batch_size = len(I)
-    batch_indices_remaining = torch.arange(batch_size)
+    batch_indices_remaining = torch.arange(batch_size).to(args.device)
     is_adv = torch.zeros_like(batch_indices_remaining, dtype=bool)
     
     #initialise variables
@@ -34,7 +34,7 @@ def distance(images, model, args, num_classes=10, overshoot=0.02, max_iter=5):
     r_tot = torch.zeros_like(x)
     loop_i = 0
     logits = model(x)
-    distances = torch.zeros(batch_size)
+    distances = torch.zeros(batch_size).to(args.device)
 
     while batch_size > 0 and loop_i < max_iter: 
         #calculate f_prime
@@ -63,17 +63,19 @@ def distance(images, model, args, num_classes=10, overshoot=0.02, max_iter=5):
         x.requires_grad = True 
         logits = model(x)
         
-        #asses whether classes have changed and drop out images that have changed class so they are no longer perturbed
+        #assess whether classes have changed and drop out images that have changed class so they are no longer perturbed
         is_adv = logits.argmax(dim=1) != I[:,0]
         num_adv = is_adv.sum()
-        distances[batch_indices_remaining[is_adv]] = norm(r_tot[is_adv].view(num_adv,-1),axis=1)
-        
-        batch_indices_remaining = batch_indices_remaining[~is_adv]
-        I = I[~is_adv]
-        images = images[~is_adv]
-        logits = logits[~is_adv]
-        r_tot = r_tot[~is_adv]
-        batch_size -= num_adv
+            
+        if num_adv > 0:
+            distances[batch_indices_remaining[is_adv]] = norm(r_tot[is_adv].view(num_adv,-1),axis=1)
+            
+            batch_indices_remaining = batch_indices_remaining[~is_adv]
+            I = I[~is_adv]
+            images = images[~is_adv]
+            logits = logits[~is_adv]
+            r_tot = r_tot[~is_adv]
+            batch_size -= num_adv
            
         loop_i += 1
 
