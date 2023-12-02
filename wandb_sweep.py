@@ -12,6 +12,7 @@ Script to carry out a wandb sweep as well as logging other metrics which
 don't log well to wandb.
 
 """
+#hello
 def main(args):
 
     with open(f"./experiments/wandb_sweeps/configs/{args.dataset}_config.yaml") as file:
