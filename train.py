@@ -298,6 +298,12 @@ def get_parser():
                         type=int,
                         default=8,
                         help="The number of epochs to wait before early stopping.")
+    
+    parser.add_argument("--early_stopping_size",
+                    type=int,
+                    default=-1,
+                    help="Size of early_stopping_dataloader. Used to make early stopping faster."
+                    )
 
     return parser
 

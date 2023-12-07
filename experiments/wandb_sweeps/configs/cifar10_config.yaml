@@ -1,11 +1,29 @@
-program: train.py
 method: grid
-name: cifar10_p_sweep
+name: cifar10_distance_pruning
 parameters:
   data_proportion:
-    values: [0.9,1.0]
+    values:
+    - 0.1
+    - 0.2
+    - 0.3
+    - 0.4
+    - 0.5
+    - 0.6
+    - 0.7
+    - 0.8
+    - 0.9
+    - 1.0
+  pruning_method:
+    values:
+    - low
   repeat:
-    values: [1,2]
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+program: train.py
 command:
   - python
   - ${program}
@@ -21,11 +39,9 @@ command:
   - "--weight_decay"
   - "0.0005"
   - "--num_epochs"
-  - "2"
+  - "15"
   - "--pruning_epoch"
   - "1"
-  - "--pruning_method"
-  - "random"
   - "--lr_max"
   - "0.2"
   - "--attack"
@@ -38,8 +54,15 @@ command:
   - "pgd"
   - "--num_logs_per_epoch"
   - "0"
+  - --early_stopping
+  - --early_stopping_patience
+  - "5"
+  - --early_stopping_size
+  - "1000"
   - "--eval_batch_size"
   - "500"
   - "--num_workers"
   - "2"
+  - --pruning_metric
+  - distance
 
