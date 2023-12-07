@@ -37,6 +37,8 @@ def main(args):
         num_steps=args.eval_num_steps,
         distance_metric=args.eval_distance_metric)
     
+    validation_attack = get_attack(args.validation_attack,eval_attack_args)
+    
     eval_attack = get_attack(args.eval_attack,eval_attack_args)
 
     if args.eval_only is not None:
@@ -46,7 +48,7 @@ def main(args):
         print(f'Attack: {args.eval_attack} | Adversarial Accuracy: {"%.3f" % adv_accuracy}')
     else:
         optimizer = get_optimizer(args.optimizer, model, args)
-        adv_accuracy, class_dist = train(model, train_dataset, eval_dataset, optimizer, train_attack, eval_attack, args)[1:]
+        adv_accuracy, class_dist = train(model, train_dataset, eval_dataset, optimizer, train_attack, validation_attack, eval_attack, args)[1:]
 
     if args.wandb_sweep:
         dataframe.loc[len(dataframe)]=[*sweep_parameters,class_dist,adv_accuracy]
@@ -115,7 +117,13 @@ def get_parser():
                         type=str,
                         default="rs_fgsm",
                         choices=config.attack_list,
-                        help="Name of the attack to evaluate against.")
+                        help="Name of the attack to train with.")
+    
+    parser.add_argument("--validation_attack",
+                        type=str,
+                        default="pgd",
+                        choices=config.attack_list,
+                        help="Name of the attack with which to carry out validation during training. If more args are needed, will use same attack args as eval_attack.")
 
     parser.add_argument("--lr_max",
                         type=float,
@@ -172,7 +180,7 @@ def get_parser():
                         type=str,
                         default="pgd",
                         choices=config.attack_list,
-                        help="Name of the attack to evaluate against.")
+                        help="Name of the attack to evaluate against after training is complete.")
 
     parser.add_argument("--eval_num_steps",
                         type=int,

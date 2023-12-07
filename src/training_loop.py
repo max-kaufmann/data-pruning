@@ -76,6 +76,7 @@ def train(
     eval_dataset,
     optimizer,
     train_attack,
+    validation_attack,
     eval_attack,
     args,
 ):
@@ -92,9 +93,6 @@ def train(
 
     # make eval dataset smaller
     eval_dataloader = smaller_dataloader(eval_dataset, args.eval_size, args)
-
-    if args.data_proportion > 0.1 and args.dataset == 'cifar10':
-        args.early_stopping = False
 
     if args.early_stopping:
         early_stopping_dataloader = smaller_dataloader(
@@ -179,7 +177,7 @@ def train(
             print(f"Epoch {epoch} - time: {end_time}")
 
         if args.early_stopping:
-            metrics = evaluate(model, early_stopping_dataloader, eval_attack, args)
+            metrics = evaluate(model, early_stopping_dataloader, validation_attack, args)
             if not args.no_wandb:
                 wandb.log(metrics)
             else:
@@ -196,7 +194,7 @@ def train(
                 break
 
         elif args.num_logs_per_epoch == 1:
-            metrics = evaluate(model, eval_dataloader, eval_attack, args)
+            metrics = evaluate(model, eval_dataloader, validation_attack, args)
             if not args.no_wandb:
                 wandb.log(metrics)
             else:
@@ -219,7 +217,7 @@ def train(
                         )
                     }
                 )
-
+                wandb.finish()
                 sys.exit()
 
             elif args.data_proportion != 1:
@@ -262,12 +260,8 @@ def train(
                     train_dataset.data.targets
                 )
 
-    if args.early_stopping:
-        final_accuracy = evaluate(model, eval_dataloader, eval_attack, args)["test_accuracy"]
-    elif args.num_logs_per_epoch == 0:
-        final_accuracy = evaluate(model, eval_dataloader, eval_attack, args)["test_accuracy"]
-    else:
-        final_accuracy = metrics["test_accuracy"]
+
+    final_accuracy = evaluate(model, eval_dataloader, eval_attack, args)["test_accuracy"]
 
     if not args.no_wandb:
         wandb.log({"adv_accuracy": final_accuracy})
