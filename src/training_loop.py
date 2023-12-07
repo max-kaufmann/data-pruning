@@ -12,6 +12,7 @@ import math
 from evaluate import evaluate
 import attacks
 import sys
+import os
 
 
 def get_remove_indices(metric_tensor, original_indices, args):
@@ -207,6 +208,9 @@ def train(
                 distance_tensor = torch.cat(distance_list)
 
                 data = [[x.item(), y.item()] for (x, y) in zip(distance_tensor, loss_tensor)]
+                df = pd.DataFrame(data=data, columns=["Distance", "Loss"])
+                os.makedirs(f"./experiments/wandb_sweeps/logs/distance_loss_correlation/", exist_ok=True)
+                df.to_json(f"./experiments/wandb_sweeps/logs/distance_loss_correlation/pe_{epoch}.json")
                 table = wandb.Table(data=data, columns=["Distance", "Loss"])
                 wandb.log(
                     {
