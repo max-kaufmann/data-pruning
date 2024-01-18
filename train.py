@@ -2,8 +2,6 @@ import argparse
 import importlib
 import numpy as np
 import torch
-import csv
-import random
 import config
 from src.misc import attach_debugger, wandb_sweep_run_init
 from src.training_loop import train
@@ -48,10 +46,10 @@ def main(args):
         print(f'Attack: {args.eval_attack} | Adversarial Accuracy: {"%.3f" % adv_accuracy}')
     else:
         optimizer = get_optimizer(args.optimizer, model, args)
-        adv_accuracy, class_dist = train(model, train_dataset, eval_dataset, optimizer, train_attack, validation_attack, eval_attack, args)[1:]
+        nat_accuracy, adv_accuracy, class_dist = train(model, train_dataset, eval_dataset, optimizer, train_attack, validation_attack, eval_attack, args)[1:]
 
     if args.wandb_sweep:
-        dataframe.loc[len(dataframe)]=[*sweep_parameters,class_dist,adv_accuracy]
+        dataframe.loc[len(dataframe)]=[*sweep_parameters,class_dist,nat_accuracy,adv_accuracy]
         run.log({"Table": wandb.Table(data=dataframe)})
         dataframe.to_json(f"./experiments/wandb_sweeps/logs/{wandb.config._settings.sweep_id}/dataframe/{run.id}.json")
     

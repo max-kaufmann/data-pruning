@@ -16,17 +16,39 @@ command:
 - auto_attack
 - --eval_batch_size
 - '10000'
-- --num_logs_per_epoch
-- '1'
 - --early_stopping
 - --num_workers
 - '2'
 - --pruning_metric
-- compare
+- distance
+- --systematic_sampling
 method: grid
-name: mnist_distance_loss_correlation
+name: mnist_distance_pruning
 parameters:
-  pruning_epoch:
-    values: [1,2,3,4]
+  data_proportion:
+    values:
+    - 0.1
+    - 0.2
+    - 0.3
+    - 0.4
+    - 0.5
+    - 0.6
+    - 0.7
+    - 0.8
+    - 0.9
+    - 1.0
+  pruning_method:
+    values:
+    - low
+    - low+high
+    - high
+    - random
+  repeat:
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
 program: train.py
 

@@ -16,6 +16,9 @@ parameters:
   pruning_method:
     values:
     - low
+    - low+high
+    - high
+    - random
   repeat:
     values:
     - 1
@@ -51,12 +54,8 @@ command:
   - "--step_size"
   - "0.039"
   - "--eval_attack"
-  - "pgd"
-  - "--num_logs_per_epoch"
-  - "0"
+  - "auto_attack"
   - --early_stopping
-  - --early_stopping_patience
-  - "5"
   - --early_stopping_size
   - "1000"
   - "--eval_batch_size"
@@ -65,4 +64,5 @@ command:
   - "2"
   - --pruning_metric
   - distance
+  - --systematic_sampling
 

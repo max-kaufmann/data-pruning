@@ -1,5 +1,6 @@
 from src.data_utils import ShuffledDataset, PrunableDataset
 from src.deepfool import distance
+from attacks.none import NoAttack
 import torch
 import pandas as pd
 import time
@@ -262,10 +263,13 @@ def train(
 
 
     final_accuracy = evaluate(model, eval_dataloader, eval_attack, args)["test_accuracy"]
+    natural_accuracy = evaluate(model, eval_dataloader, NoAttack(), args)["test_accuracy"]
 
     if not args.no_wandb:
         wandb.log({"adv_accuracy": final_accuracy})
+        wandb.log({"nat_accuracy": natural_accuracy})
     else:
         print(f"Advesraial accuracy: {final_accuracy}")
+        print(f"Natural accuracy: {natural_accuracy}")
 
-    return model, final_accuracy, train_dataset.class_dist()
+    return model, natural_accuracy, final_accuracy, train_dataset.class_dist()
