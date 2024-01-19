@@ -1,17 +1,10 @@
 import argparse
-import pandas as pd
-import numpy as np
-import subprocess as sp
 import os
 import yaml
 import wandb
 from src.data_utils import t_test, aggregate_dataframe, mean_class_dist
 from src.misc import reset_wandb_env
-"""
-Script to carry out a wandb sweep as well as logging other metrics which
-don't log well to wandb.
 
-"""
 def main(args):
 
     with open(f"./experiments/wandb_sweeps/configs/{args.dataset}_config.yaml") as file:

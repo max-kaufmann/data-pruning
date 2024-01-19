@@ -8,7 +8,7 @@ from attacks.attacks import AttackInstance
 
 class NoAttack(AttackInstance):
 
-    def __init__(self, args):
+    def __init__(self):
         super(NoAttack, self)
 
     def generate_attack(self, model, xs, ys):
@@ -17,4 +17,4 @@ class NoAttack(AttackInstance):
 
 
 def get_attack(args):
-    return NoAttack(args)
+    return NoAttack()

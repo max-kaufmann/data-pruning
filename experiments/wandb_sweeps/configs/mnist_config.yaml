@@ -4,6 +4,8 @@ command:
 - --wandb_sweep
 - --num_epochs
 - '10'
+- --pruning_epoch
+- '1'
 - --lr_max
 - '0.005'
 - --epsilon
@@ -19,12 +21,14 @@ command:
 - --early_stopping
 - --num_workers
 - '2'
-- --pruning_metric
-- distance
 - --systematic_sampling
 method: grid
 name: mnist_distance_pruning
 parameters:
+  pruning_metric:
+    values:
+      - distance
+      - loss
   data_proportion:
     values:
     - 0.1

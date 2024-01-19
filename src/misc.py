@@ -170,4 +170,4 @@ def wandb_sweep_run_init(args):
     param_titles = [param.replace("_"," ").title() for param in param_dict.keys()]
     dataframe = pd.DataFrame(columns=[*param_titles,"Class Distribution","Natural Accuracy","Adversarial Accuracy"])
 
-    return {"DataFrame":dataframe, "data for table": [*param_dict.values()] , "Run":run}
+    return dataframe, [*param_dict.values()], run

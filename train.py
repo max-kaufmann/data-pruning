@@ -12,7 +12,7 @@ global wandb
 def main(args):
 
     if args.wandb_sweep:
-        dataframe, sweep_parameters, run = wandb_sweep_run_init(args).values()
+        dataframe, sweep_parameters, run = wandb_sweep_run_init(args)
     elif not args.no_wandb:
         wandb.init(project=args.wandb_project_name, name=args.experiment_name, config=args)
 

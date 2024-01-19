@@ -1,6 +1,10 @@
 method: grid
 name: cifar10_distance_pruning
 parameters:
+  pruning_metric:
+    values:
+      - distance
+      - loss
   data_proportion:
     values:
     - 0.1
@@ -62,7 +66,5 @@ command:
   - "500"
   - "--num_workers"
   - "2"
-  - --pruning_metric
-  - distance
   - --systematic_sampling
 

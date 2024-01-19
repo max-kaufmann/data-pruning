@@ -9,4 +9,4 @@ experiments/wandb_sweeps/logs
 testing_notebook.ipynb
 wandb_bodge.txt
 models/test_models
-test.sh
+wandb_sweep.sh
