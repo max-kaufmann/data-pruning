@@ -4,8 +4,6 @@ command:
 - --wandb_sweep
 - --num_epochs
 - '10'
-- --pruning_epoch
-- '1'
 - --lr_max
 - '0.005'
 - --epsilon
@@ -21,32 +19,26 @@ command:
 - --early_stopping
 - --num_workers
 - '2'
-- --systematic_sampling
 method: grid
-name: mnist_distance_pruning
+name: mnist_pruning_epoch
 parameters:
-  pruning_metric:
+  pruning_epoch:
     values:
-      - distance
-      - loss
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
   data_proportion:
     values:
-    - 0.1
-    - 0.2
     - 0.3
-    - 0.4
-    - 0.5
     - 0.6
-    - 0.7
-    - 0.8
-    - 0.9
-    - 1.0
   pruning_method:
     values:
-    - low
-    - low+high
-    - high
     - random
+  pruning_metric:
+    values:
+    - loss
   repeat:
     values:
     - 1
@@ -54,5 +46,9 @@ parameters:
     - 3
     - 4
     - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
 program: train.py
-

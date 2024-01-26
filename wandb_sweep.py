@@ -7,7 +7,7 @@ from src.misc import reset_wandb_env
 
 def main(args):
 
-    with open(f"./experiments/wandb_sweeps/configs/{args.dataset}_config.yaml") as file:
+    with open(f"./experiments/wandb_sweeps/configs/{args.config}_config.yaml") as file:
         config = yaml.load(file, Loader=yaml.FullLoader)   
     
     sweep_id_full = wandb.sweep(config, project='data-pruning')
@@ -37,7 +37,7 @@ def parse_args():
 
     parser = argparse.ArgumentParser(description='Run training script')
 
-    parser.add_argument('--dataset', default='mnist', type=str)
+    parser.add_argument('--config', default='mnist_loss', type=str)
     
     parser.add_argument('--t_test', 
                         nargs=4, 

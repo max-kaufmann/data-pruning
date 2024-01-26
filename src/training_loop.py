@@ -225,7 +225,7 @@ def train(
                 if args.pruning_method != "random":
                     metric_tensor = torch.cat(metric_list)
                 else:
-                    metric_tensor = torch.tensor(metric_list)
+                    metric_tensor = torch.zeros(train_dataset.__len__())
 
                 shuffled_index = train_dataset_shuffled.get_indices()
 
@@ -261,6 +261,7 @@ def train(
                     train_dataset.data.targets
                 )
 
+    train_time = int(time.time()) - int(start_time)
 
     final_accuracy = evaluate(model, eval_dataloader, eval_attack, args)["test_accuracy"]
     natural_accuracy = evaluate(model, eval_dataloader, NoAttack(), args)["test_accuracy"]
@@ -272,4 +273,4 @@ def train(
         print(f"Advesraial accuracy: {final_accuracy}")
         print(f"Natural accuracy: {natural_accuracy}")
 
-    return model, natural_accuracy, final_accuracy, train_dataset.class_dist()
+    return model, natural_accuracy, final_accuracy, train_dataset.class_dist(), train_time

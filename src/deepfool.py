@@ -8,16 +8,14 @@ def distance(images, model, args, num_classes=10, overshoot=0.02, max_iter=5):
        :param model: network (input: images, output: values of activation **BEFORE** softmax).
        :param num_classes: num_classes (limits the number of classes to test against, by default = 10)
        :param overshoot: used as a termination criterion to prevent vanishing updates (default = 0.02).
-       :param max_iter: maximum number of iterations for deepfool (default = 50)
-       :return: shortest distance to descision boundary for each image in batch
+       :param max_iter: maximum number of iterations for deepfool (default = 5)
+       :return: shortest distance to decision boundary for each image in batch
     """
     images = images.to(args.device)
     model = model.to(args.device)
     
     model_is_training = model.training
-
-    if model_is_training:
-        model.eval()
+    model.eval()
     
     #manage indices
     initial_logits = model(images)
@@ -43,9 +41,9 @@ def distance(images, model, args, num_classes=10, overshoot=0.02, max_iter=5):
         
         #calculate w
         F = f_prime.sum(axis=0)
-        w = torch.stack([torch.autograd.grad(f_prime_k, x, retain_graph=True)[0][~is_adv] for f_prime_k in F],dim=1) #back up idea is to use jacobian(F,x) where F is a FUNCTION that returns f_prime_sum, but I think this relies too much on closures (nested functions accessing variables from outer scope).
+        w = torch.stack([torch.autograd.grad(f_prime_k, x, retain_graph=True)[0][~is_adv] for f_prime_k in F],dim=1) 
         
-        #find which classes have closest descision bounadries to each image in the batch
+        #find which classes have closest decision boundaries to each image in the batch
         p = abs(f_prime)/norm(w.view(batch_size,num_classes-1,-1),axis=2)
         mins, argmins = p.min(axis=1)
 
